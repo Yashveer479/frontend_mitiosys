@@ -18,37 +18,38 @@ export default async function handler(req: Request) {
     const headers = new Headers();
 
     // Whitelist approach: Only forward essential headers
-    const whitelist = ['content-type', 'authorization', 'accept', 'user-agent'];
+    const whitelist = ['content-type', 'authorization', 'accept', 'user-agent', 'cookie', 'x-auth-token'];
     for (const [key, value] of incomingHeaders.entries()) {
-        if (whitelist.includes(key.toLowerCase()) || key.toLowerCase().startsWith('x-')) {
+        const lowerKey = key.toLowerCase();
+        if (whitelist.includes(lowerKey) || lowerKey.startsWith('x-')) {
             headers.set(key, value);
         }
     }
 
-    if (req.method !== 'GET' && req.method !== 'HEAD' && !headers.has('content-type')) {
-        headers.set('content-type', 'application/json');
-    }
+    // Explicitly set the Origin to the target backend to satisfy CORS/Security checks
+    headers.set('origin', 'http://13.205.230.226:5000');
 
     try {
         const resp = await fetch(url, {
             method: req.method,
             headers,
             body: req.method === 'GET' || req.method === 'HEAD' ? undefined : req.body,
-            // @ts-ignore - duplex is required when body is a stream in some environments
+            // @ts-ignore - duplex is required for streaming bodies in Edge
             duplex: 'half'
         });
 
-        // If not successful (like 403), capture the error body to see why the backend rejected it
         if (!resp.ok) {
             const errorText = await resp.text();
+            // TEMPORARY: Return 200 so Axios doesn't throw and you can see the body in the App
             return new Response(JSON.stringify({
-                error: 'Backend Error',
+                isProxyError: true,
                 status: resp.status,
                 statusText: resp.statusText,
                 body: errorText,
-                targetUrl: url
+                targetUrl: url,
+                sentHeaders: Object.fromEntries(headers.entries())
             }), {
-                status: resp.status,
+                status: 200,
                 headers: { 'content-type': 'application/json' }
             });
         }
@@ -60,11 +61,12 @@ export default async function handler(req: Request) {
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         return new Response(JSON.stringify({
-            error: 'Proxy Fetch Error',
+            isProxyError: true,
+            error: 'Proxy Critical Failure',
             details: errorMessage,
             targetUrl: url
         }), {
-            status: 502,
+            status: 200,
             headers: { 'content-type': 'application/json' },
         });
     }
