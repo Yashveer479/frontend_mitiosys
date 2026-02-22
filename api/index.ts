@@ -37,7 +37,24 @@ export default async function handler(req: Request) {
             method: req.method,
             headers,
             body: req.method === 'GET' || req.method === 'HEAD' ? undefined : req.body,
+            // @ts-ignore - duplex is required when body is a stream in some environments
+            duplex: 'half'
         });
+
+        // If not successful (like 403), capture the error body to see why the backend rejected it
+        if (!resp.ok) {
+            const errorText = await resp.text();
+            return new Response(JSON.stringify({
+                error: 'Backend Error',
+                status: resp.status,
+                statusText: resp.statusText,
+                body: errorText,
+                targetUrl: url
+            }), {
+                status: resp.status,
+                headers: { 'content-type': 'application/json' }
+            });
+        }
 
         return new Response(resp.body, {
             status: resp.status,
