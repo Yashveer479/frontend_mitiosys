@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Zap, Search, Bell, User, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { toServerUrl } from '../services/urlConfig';
 
 const Header = () => {
     const { user } = useAuth();
@@ -11,7 +12,7 @@ const Header = () => {
         return () => clearInterval(timer);
     }, []);
 
-    const avatarUrl = user?.avatar ? `${import.meta.env.VITE_SERVER_URL}${user.avatar}` : null;
+    const avatarUrl = toServerUrl(user?.avatar);
 
     return (
         <header className="fixed top-0 left-64 right-0 z-40 flex flex-col shadow-sm">

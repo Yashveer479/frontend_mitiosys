@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { toServerUrl } from '../services/urlConfig';
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -172,7 +173,7 @@ const Profile = () => {
         </div>
     );
 
-    const avatarUrl = user.avatar ? `${import.meta.env.VITE_SERVER_URL}${user.avatar}` : null;
+    const avatarUrl = toServerUrl(user.avatar);
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] p-6 pb-20">
