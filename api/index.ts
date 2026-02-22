@@ -40,7 +40,14 @@ export default async function handler(req: Request) {
         });
 
         // Forward headers from backend, but ensure we don't leak backend server info
-        const responseHeaders = new Headers(resp.headers);
+        const responseHeaders = new Headers();
+        const restrictedHeaders = ['connection', 'keep-alive', 'transfer-encoding', 'content-encoding'];
+
+        for (const [key, value] of resp.headers.entries()) {
+            if (!restrictedHeaders.includes(key.toLowerCase())) {
+                responseHeaders.set(key, value);
+            }
+        }
 
         return new Response(resp.body, {
             status: resp.status,
@@ -48,7 +55,7 @@ export default async function handler(req: Request) {
         });
 
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error ? error.stack || error.message : String(error);
         return new Response(JSON.stringify({
             error: 'Proxy Critical Failure',
             details: errorMessage,
