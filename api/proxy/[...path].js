@@ -1,10 +1,9 @@
 export default async function handler(req, res) {
-  const TARGET_BASE = 'http://13.205.230.226:5000';
+  const TARGET_BASE = 'http://13.205.230.226:5000/api';
   try {
-    const fullUrlPath = req.url || '';
-    const query = fullUrlPath.includes('?') ? fullUrlPath.split('?')[1] : '';
-    const pathOnly = fullUrlPath.split('?')[0];
-    const url = `${TARGET_BASE}${pathOnly}${query ? '?' + query : ''}`;
+    const pathPart = Array.isArray(req.query.path) ? req.query.path.join('/') : (req.query.path || '');
+    const query = req.url && req.url.includes('?') ? req.url.split('?')[1] : '';
+    const url = `${TARGET_BASE}/${pathPart}${query ? '?' + query : ''}`;
 
     const body = await new Promise((resolve, reject) => {
       const chunks = [];
