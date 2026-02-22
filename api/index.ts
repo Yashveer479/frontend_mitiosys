@@ -14,17 +14,14 @@ export default async function handler(req: Request) {
     const search = incomingUrl.search;
     const url = path ? `${TARGET_BASE}/${path}${search}` : `${TARGET_BASE}${search}`;
 
-    const headers = new Headers(req.headers);
+    const incomingHeaders = new Headers(req.headers);
+    const headers = new Headers();
 
-    // Sanitize headers to prevent 403s and conflicts
-    headers.delete('host');
-    headers.delete('origin');
-    headers.delete('referer');
-
-    // Remove Vercel-specific headers that might confuse the backend
-    for (const [key] of headers.entries()) {
-        if (key.toLowerCase().startsWith('x-vercel-')) {
-            headers.delete(key);
+    // Whitelist approach: Only forward essential headers
+    const whitelist = ['content-type', 'authorization', 'accept', 'user-agent'];
+    for (const [key, value] of incomingHeaders.entries()) {
+        if (whitelist.includes(key.toLowerCase()) || key.toLowerCase().startsWith('x-')) {
+            headers.set(key, value);
         }
     }
 
