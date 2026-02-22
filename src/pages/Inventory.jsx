@@ -290,7 +290,7 @@ const Inventory = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <span className="font-black text-slate-900 text-sm tracking-tight">{p.quantity.toLocaleString()}</span>
+                                            <span className="font-black text-slate-900 text-sm tracking-tight">{(p.quantity || 0).toLocaleString()}</span>
                                             <span className="text-[9px] text-slate-400 font-bold uppercase ml-1">Units</span>
                                         </td>
 

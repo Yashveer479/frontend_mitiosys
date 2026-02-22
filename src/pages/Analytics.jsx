@@ -63,10 +63,10 @@ const Analytics = () => {
 
     // Derived KPI Data
     const kpis = [
-        { label: 'Total Revenue', value: `UGX ${(summary.totalRevenue / 1000000).toFixed(1)}M`, change: '+12.5%', trend: 'up', icon: DollarSign, color: 'blue' },
-        { label: 'Total Orders', value: summary.totalOrders.toLocaleString(), change: '+8.2%', trend: 'up', icon: Package, color: 'emerald' },
-        { label: 'Avg. Order Value', value: `UGX ${(summary.avgOrderValue / 1000).toFixed(0)}K`, change: '-2.1%', trend: 'down', icon: BarChart3, color: 'rose' },
-        { label: 'Stock Turnover', value: summary.stockTurnover, change: '+0.8x', trend: 'up', icon: TrendingUp, color: 'indigo' }
+        { label: 'Total Revenue', value: `UGX ${((summary?.totalRevenue || 0) / 1000000).toFixed(1)}M`, change: '+12.5%', trend: 'up', icon: DollarSign, color: 'blue' },
+        { label: 'Total Orders', value: (summary?.totalOrders || 0).toLocaleString(), change: '+8.2%', trend: 'up', icon: Package, color: 'emerald' },
+        { label: 'Avg. Order Value', value: `UGX ${((summary?.avgOrderValue || 0) / 1000).toFixed(0)}K`, change: '-2.1%', trend: 'down', icon: BarChart3, color: 'rose' },
+        { label: 'Stock Turnover', value: summary?.stockTurnover || '0x', change: '+0.8x', trend: 'up', icon: TrendingUp, color: 'indigo' }
     ];
 
     // Chart Data mapping
@@ -253,7 +253,7 @@ const Analytics = () => {
                         <div className="mt-8 pt-8 border-t border-slate-100">
                             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Insights</h4>
                             <p className="text-xs font-medium text-slate-600 leading-relaxed">
-                                Analysis shows the current distribution across categories. Total items in stock: <span className="font-bold text-blue-600">{inventoryReport.reduce((sum, i) => sum + i.stock, 0).toLocaleString()}</span> units.
+                                Analysis shows the current distribution across categories. Total items in stock: <span className="font-bold text-blue-600">{(inventoryReport || []).reduce((sum, i) => sum + (i.stock || 0), 0).toLocaleString()}</span> units.
                             </p>
                         </div>
                     </div>
@@ -288,7 +288,7 @@ const Analytics = () => {
                                         <td className="py-4 text-xs font-black text-slate-300 group-hover:text-blue-500">#{index + 1}</td>
                                         <td className="py-4 text-sm font-bold text-slate-700">{customer.name}</td>
                                         <td className="py-4 text-sm font-bold text-slate-600 text-right">{customer.orders}</td>
-                                        <td className="py-4 text-sm font-black text-slate-900 text-right">UGX {(customer.totalSpend / 1000).toLocaleString()}K</td>
+                                        <td className="py-4 text-sm font-black text-slate-900 text-right">UGX {((customer.totalSpend || 0) / 1000).toLocaleString()}K</td>
                                         <td className="py-4 text-right">
                                             <div className="inline-flex items-center space-x-1 text-emerald-500 bg-emerald-50 px-2 py-1 rounded text-[10px] font-bold uppercase">
                                                 <TrendingUp size={12} />

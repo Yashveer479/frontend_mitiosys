@@ -165,7 +165,7 @@ const Reports = () => {
                             <table className="w-full text-left">
                                 <thead className="bg-slate-50/50">
                                     <tr>
-                                        {Object.keys(data[0]).map(header => (
+                                        {(data && data.length > 0) && Object.keys(data[0]).map(header => (
                                             <th key={header} className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                                                 {header.replace(/([A-Z])/g, ' $1').trim()}
                                             </th>
@@ -178,7 +178,7 @@ const Reports = () => {
                                             {Object.values(row).map((val, i) => (
                                                 <td key={i} className="px-6 py-4 text-xs font-bold text-slate-600">
                                                     {typeof val === 'number' ?
-                                                        (val > 1000 ? val.toLocaleString() : val) :
+                                                        (val > 1000 ? (val || 0).toLocaleString() : val) :
                                                         String(val)
                                                     }
                                                 </td>

@@ -98,7 +98,7 @@ const Orders = () => {
 
                             <div className="flex items-center space-x-8">
                                 <div className="text-right">
-                                    <p className="text-lg font-bold text-slate-900 tracking-tight mb-1">${order.totalAmount.toLocaleString()}</p>
+                                    <p className="text-lg font-bold text-slate-900 tracking-tight mb-1">${(order.totalAmount || 0).toLocaleString()}</p>
                                     <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${order.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                         order.status === 'Processing' ? 'bg-amber-50 text-amber-600 border-amber-100' :
                                             'bg-slate-50 text-slate-500 border-slate-200'

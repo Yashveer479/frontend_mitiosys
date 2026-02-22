@@ -3,10 +3,11 @@ export const config = {
 };
 
 export default async function handler(req: Request) {
-    const TARGET_BASE = 'http://13.205.230.226:5000/api';
+    // Vercel Edge Runtime doesn't allow direct IP fetch. Use sslip.io to map IP to a hostname.
+    const TARGET_BASE = 'http://13-205-230-226.sslip.io:5000/api';
     const incomingUrl = new URL(req.url);
 
-    // Extract path accurately by splitting and taking everything after 'api'
+    // Extract path accurately
     const pathParts = incomingUrl.pathname.split('/').filter(Boolean);
     const apiIndex = pathParts.indexOf('api');
     const path = apiIndex !== -1 ? pathParts.slice(apiIndex + 1).join('/') : '';
@@ -26,47 +27,34 @@ export default async function handler(req: Request) {
         }
     }
 
-    // Explicitly set the Origin to the target backend to satisfy CORS/Security checks
-    headers.set('origin', 'http://13.205.230.226:5000');
+    // Set Origin to satisfy CORS/Security checks on backend
+    headers.set('origin', 'http://13-205-230-226.sslip.io:5000');
 
     try {
         const resp = await fetch(url, {
             method: req.method,
             headers,
             body: req.method === 'GET' || req.method === 'HEAD' ? undefined : req.body,
-            // @ts-ignore - duplex is required for streaming bodies in Edge
+            // @ts-ignore - duplex is required for streaming bodies in Edge fetch
             duplex: 'half'
         });
 
-        if (!resp.ok) {
-            const errorText = await resp.text();
-            // TEMPORARY: Return 200 so Axios doesn't throw and you can see the body in the App
-            return new Response(JSON.stringify({
-                isProxyError: true,
-                status: resp.status,
-                statusText: resp.statusText,
-                body: errorText,
-                targetUrl: url,
-                sentHeaders: Object.fromEntries(headers.entries())
-            }), {
-                status: 200,
-                headers: { 'content-type': 'application/json' }
-            });
-        }
+        // Forward headers from backend, but ensure we don't leak backend server info
+        const responseHeaders = new Headers(resp.headers);
 
         return new Response(resp.body, {
             status: resp.status,
-            headers: resp.headers,
+            headers: responseHeaders,
         });
+
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         return new Response(JSON.stringify({
-            isProxyError: true,
             error: 'Proxy Critical Failure',
             details: errorMessage,
             targetUrl: url
         }), {
-            status: 200,
+            status: 502, // Bad Gateway
             headers: { 'content-type': 'application/json' },
         });
     }

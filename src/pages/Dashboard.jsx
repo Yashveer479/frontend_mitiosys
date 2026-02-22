@@ -85,7 +85,7 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <KPICard
                         title="Total Inventory"
-                        value={stats.totalInventory.toLocaleString()}
+                        value={(stats?.totalInventory || 0).toLocaleString()}
                         subtitle="Stock Units"
                         icon={Package}
                         trend="+4.2%"
@@ -94,7 +94,7 @@ const Dashboard = () => {
                     />
                     <KPICard
                         title="Today's Sales"
-                        value={`UDX ${stats.monthlyRevenue.toLocaleString()}`}
+                        value={`UDX ${(stats?.monthlyRevenue || 0).toLocaleString()}`}
                         subtitle="Daily Revenue"
                         icon={BarChart3}
                         trend="Real-time"
