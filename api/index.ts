@@ -27,8 +27,12 @@ export default async function handler(req: Request) {
         }
     }
 
-    // Set Origin to satisfy CORS/Security checks on backend
-    headers.set('origin', 'http://13-205-230-226.sslip.io:5000');
+    // Explicitly set the host header to the target backend
+    headers.set('host', '13-205-230-226.sslip.io:5000');
+
+    // Do NOT set Origin manually, as the backend's CORS policy is strict and rejects the sslip.io hostname.
+    // By not sending an Origin, the backend's CORS middleware (configured with a whitelist) 
+    // will usually allow the request (confirmed via curl diagnostics).
 
     try {
         const resp = await fetch(url, {
@@ -41,7 +45,13 @@ export default async function handler(req: Request) {
 
         // Forward headers from backend, but ensure we don't leak backend server info
         const responseHeaders = new Headers();
-        const restrictedHeaders = ['connection', 'keep-alive', 'transfer-encoding', 'content-encoding'];
+        const restrictedHeaders = [
+            'connection',
+            'keep-alive',
+            'transfer-encoding',
+            'content-encoding',
+            'content-length' // Let Vercel calculate this
+        ];
 
         for (const [key, value] of resp.headers.entries()) {
             if (!restrictedHeaders.includes(key.toLowerCase())) {
