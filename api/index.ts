@@ -15,7 +15,19 @@ export default async function handler(req: Request) {
     const url = path ? `${TARGET_BASE}/${path}${search}` : `${TARGET_BASE}${search}`;
 
     const headers = new Headers(req.headers);
+
+    // Sanitize headers to prevent 403s and conflicts
     headers.delete('host');
+    headers.delete('origin');
+    headers.delete('referer');
+
+    // Remove Vercel-specific headers that might confuse the backend
+    for (const [key] of headers.entries()) {
+        if (key.toLowerCase().startsWith('x-vercel-')) {
+            headers.delete(key);
+        }
+    }
+
     if (req.method !== 'GET' && req.method !== 'HEAD' && !headers.has('content-type')) {
         headers.set('content-type', 'application/json');
     }
@@ -33,7 +45,11 @@ export default async function handler(req: Request) {
         });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        return new Response(JSON.stringify({ error: 'Proxy Fetch Error', details: errorMessage }), {
+        return new Response(JSON.stringify({
+            error: 'Proxy Fetch Error',
+            details: errorMessage,
+            targetUrl: url
+        }), {
             status: 502,
             headers: { 'content-type': 'application/json' },
         });
