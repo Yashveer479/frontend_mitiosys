@@ -24,6 +24,9 @@ export default async function handler(req, res) {
 
     const headers = { ...req.headers };
     delete headers.host;
+    if (!['GET', 'HEAD'].includes(req.method) && bodyData && !headers['content-type']) {
+      headers['content-type'] = 'application/json';
+    }
 
     const resp = await fetch(url, {
       method: req.method,
