@@ -5,12 +5,22 @@ export default async function handler(req, res) {
     const query = req.url && req.url.includes('?') ? req.url.split('?')[1] : '';
     const url = `${TARGET_BASE}/${pathPart}${query ? '?' + query : ''}`;
 
-    const body = await new Promise((resolve, reject) => {
-      const chunks = [];
-      req.on('data', (c) => chunks.push(c));
-      req.on('end', () => resolve(Buffer.concat(chunks)));
-      req.on('error', reject);
-    });
+    console.log(`[PROXY] ${req.method} ${url}`);
+
+    let bodyData = null;
+    if (!['GET', 'HEAD'].includes(req.method)) {
+      if (req.body) {
+        bodyData = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      } else {
+        const chunks = [];
+        await new Promise((resolve, reject) => {
+          req.on('data', (c) => chunks.push(c));
+          req.on('end', () => resolve());
+          req.on('error', reject);
+        });
+        bodyData = Buffer.concat(chunks);
+      }
+    }
 
     const headers = { ...req.headers };
     delete headers.host;
@@ -18,9 +28,10 @@ export default async function handler(req, res) {
     const resp = await fetch(url, {
       method: req.method,
       headers,
-      body: ['GET', 'HEAD'].includes(req.method) ? undefined : body,
+      body: bodyData,
     });
 
+    console.log(`[PROXY] Response: ${resp.status}`);
     res.status(resp.status);
     resp.headers.forEach((value, key) => {
       if (key.toLowerCase() === 'transfer-encoding') return;
@@ -30,7 +41,8 @@ export default async function handler(req, res) {
     const ab = await resp.arrayBuffer();
     res.send(Buffer.from(ab));
   } catch (err) {
-    console.error('Proxy error:', err);
-    res.status(500).json({ error: 'Proxy error' });
+    console.error('[PROXY] Error:', err);
+    res.status(500).json({ error: 'Proxy error', details: err.message });
   }
+
 }
