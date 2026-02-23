@@ -19,7 +19,7 @@ export default async function handler(req: Request) {
     const headers = new Headers();
 
     // Whitelist approach: Only forward essential headers
-    const whitelist = ['content-type', 'authorization', 'accept', 'user-agent', 'cookie', 'x-auth-token'];
+    const whitelist = ['content-type', 'authorization', 'accept', 'user-agent', 'cookie', 'x-auth-token', 'origin', 'referer', 'accept-encoding'];
     for (const [key, value] of incomingHeaders.entries()) {
         const lowerKey = key.toLowerCase();
         if (whitelist.includes(lowerKey) || lowerKey.startsWith('x-')) {
@@ -27,8 +27,9 @@ export default async function handler(req: Request) {
         }
     }
 
-    // Explicitly set the host header to the target backend
-    headers.set('host', '13-205-230-226.sslip.io:5000');
+    // Explicitly set the host header to the target backend (without the hostname mapping for Host header)
+    // The target host is 13.205.230.226:5000 via its sslip.io mapping.
+    headers.set('host', '13.205.230.226:5000');
 
     // Do NOT set Origin manually, as the backend's CORS policy is strict and rejects the sslip.io hostname.
     // By not sending an Origin, the backend's CORS middleware (configured with a whitelist) 
