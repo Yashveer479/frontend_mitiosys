@@ -1,0 +1,191 @@
+﻿curl.exe : Note: 
+Unnecessary use of 
+-X or --request, 
+POST is already 
+inferred.
+At line:1 char:1
++ curl.exe -v -X 
+POST -H 
+"Content-Type: 
+application/json" -d 
+"{\"email\ ...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Note: U   
+ nnecessa...ready    
+ inferred.:Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+* URL rejected: Port 
+number was not a 
+decimal number 
+between 0 and 65535
+* closing connection 
+#-1
+curl: (3) URL 
+rejected: Port 
+number was not a 
+decimal number 
+between 0 and 65535
+Note: Unnecessary 
+use of -X or 
+--request, POST is 
+already inferred.
+  % Total    % 
+Received % Xferd  
+Average Speed   Time 
+   Time     Time  
+Current
+                     
+            Dload  
+Upload   Total   
+Spent    Left  Speed
+
+  0     0    0     0 
+   0     0      0    
+  0 --:--:-- 
+--:--:-- --:--:--    
+ 0* Host 13-205-230-2
+26.sslip.io:5000 was 
+resolved.
+* IPv6: 
+64:ff9b::dcd:e6e2
+* IPv4: 
+13.205.230.226
+*   Trying [64:ff9b::
+dcd:e6e2]:5000...
+* Established 
+connection to 13-205-
+230-226.sslip.io 
+(64:ff9b::dcd:e6e2 
+port 5000) from 2409:
+40d0:12e0:81cb:3cff:9
+dfe:6bbf:b593 port 
+55647 
+* using HTTP/1.x
+> POST 
+/api/auth/login 
+HTTP/1.1
+
+> Host: 13-205-230-22
+6.sslip.io:5000
+
+> User-Agent: 
+curl/8.16.0
+
+> Accept: */*
+
+> Content-Type: 
+application/json
+
+> Content-Length: 2
+
+> 
+
+} [2 bytes data]
+* upload completely 
+sent off: 2 bytes
+< HTTP/1.1 400 Bad 
+Request
+
+< X-Powered-By: 
+Express
+
+< RateLimit-Policy: 
+30;w=900
+
+< RateLimit-Limit: 30
+
+< 
+RateLimit-Remaining: 
+19
+
+< RateLimit-Reset: 62
+
+< Content-Security-Po
+licy: default-src 
+'none'
+
+< X-Content-Type-Opti
+ons: nosniff
+
+< Content-Type: 
+text/html; 
+charset=utf-8
+
+< Content-Length: 
+1069
+
+< Date: Sun, 22 Feb 
+2026 18:29:24 GMT
+
+< Connection: 
+keep-alive
+
+< Keep-Alive: 
+timeout=5
+
+< 
+
+{ [1069 bytes data]
+
+100  1071  100  1069 
+ 100     2   6929    
+ 12 --:--:-- 
+--:--:-- --:--:--  
+7140
+* Connection #0 to 
+host 13-205-230-226.s
+slip.io:5000 left 
+intact
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>SyntaxError: Expected property name or &#39;}&#39; in JSON at position 1<br> &nbsp; &nbsp;at JSON.parse (&lt;anonymous&gt;)<br> &nbsp; &nbsp;at parse (/home/ubuntu/backend_mitiosys/node_modules/body-parser/lib/types/json.js:72:19)<br> &nbsp; &nbsp;at /home/ubuntu/backend_mitiosys/node_modules/body-parser/lib/read.js:162:18<br> &nbsp; &nbsp;at AsyncResource.runInAsyncScope (node:async_hooks:206:9)<br> &nbsp; &nbsp;at invokeCallback (/home/ubuntu/backend_mitiosys/node_modules/raw-body/index.js:238:16)<br> &nbsp; &nbsp;at done (/home/ubuntu/backend_mitiosys/node_modules/raw-body/index.js:227:7)<br> &nbsp; &nbsp;at IncomingMessage.onEnd (/home/ubuntu/backend_mitiosys/node_modules/raw-body/index.js:287:7)<br> &nbsp; &nbsp;at IncomingMessage.emit (node:events:524:28)<br> &nbsp; &nbsp;at endReadableNT (node:internal/streams/readable:1698:12)<br> &nbsp; &nbsp;at process.processTicksAndRejections (node:internal/process/task_queues:82:21)</pre>
+</body>
+</html>
+Note: Unnecessary 
+use of -X or 
+--request, POST is 
+already inferred.
+  % Total    % 
+Received % Xferd  
+Average Speed   Time 
+   Time     Time  
+Current
+                     
+            Dload  
+Upload   Total   
+Spent    Left  Speed
+
+  0     0    0     0 
+   0     0      0    
+  0 --:--:-- 
+--:--:-- --:--:--    
+ 0
+  0     0    0     0 
+   0     0      0    
+  0 --:--:--  
+0:00:01 --:--:--     
+0* Could not resolve 
+host: Σ╝ü
+* Store negative 
+name resolve for 
+xn--hoq:80
+* shutting down 
+connection #1
+curl: (6) Could not 
+resolve host: Σ╝ü
+
