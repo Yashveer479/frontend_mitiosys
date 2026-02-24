@@ -6,6 +6,13 @@ import loginBg from '../assets/login-bg.jpg';
 import mitioLogo from '../assets/logo.png';
 
 const OTP_COOLDOWN = 60; // seconds
+const getApiErrorMessage = (err, fallback) => {
+    const data = err?.response?.data;
+    if (typeof data?.msg === 'string' && data.msg.trim()) return data.msg;
+    if (Array.isArray(data?.errors) && typeof data.errors[0]?.msg === 'string') return data.errors[0].msg;
+    if (typeof data === 'string' && data.trim()) return data;
+    return fallback;
+};
 
 const Login = () => {
     const [name, setName] = useState('');
@@ -78,7 +85,7 @@ const Login = () => {
                 navigate('/');
             }
         } catch (err) {
-            const msg = err.response?.data?.msg || 'Access Denied: Invalid Credentials';
+            const msg = getApiErrorMessage(err, 'Access Denied: Invalid Credentials');
             setErrorMsg(msg);
             setIsLoading(false);
         }
@@ -92,7 +99,7 @@ const Login = () => {
             await requestOtp(email);
             startCooldown();
         } catch (err) {
-            setErrorMsg(err.response?.data?.msg || 'Failed to resend OTP');
+            setErrorMsg(getApiErrorMessage(err, 'Failed to resend OTP'));
         }
     };
 
