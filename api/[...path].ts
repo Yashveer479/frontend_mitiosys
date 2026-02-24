@@ -12,10 +12,11 @@ export default async function handler(req: Request) {
   const incomingHeaders = new Headers(req.headers);
   const headers = new Headers();
 
-  const whitelist = ['content-type', 'authorization', 'accept', 'user-agent', 'cookie', 'x-auth-token', 'origin', 'referer', 'accept-encoding'];
+  // Do not forward browser origin/referer to avoid backend CORS rejection in proxy mode.
+  const whitelist = ['content-type', 'authorization', 'accept', 'user-agent', 'cookie', 'x-auth-token', 'accept-encoding'];
   for (const [key, value] of incomingHeaders.entries()) {
     const lowerKey = key.toLowerCase();
-    if (whitelist.includes(lowerKey) || lowerKey.startsWith('x-')) {
+    if (whitelist.includes(lowerKey) || (lowerKey.startsWith('x-') && lowerKey !== 'x-forwarded-host' && lowerKey !== 'x-forwarded-proto')) {
       headers.set(key, value);
     }
   }
