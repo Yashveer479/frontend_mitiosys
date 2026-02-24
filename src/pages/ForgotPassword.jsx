@@ -8,6 +8,7 @@ import mitioLogo from '../assets/logo.png';
 const OTP_COOLDOWN = 60;
 
 const STEPS = { EMAIL: 'email', OTP: 'otp', PASSWORD: 'password', DONE: 'done' };
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const ForgotPassword = () => {
     const [step, setStep] = useState(STEPS.EMAIL);
@@ -43,7 +44,9 @@ const ForgotPassword = () => {
         setErrorMsg('');
         setIsLoading(true);
         try {
-            await api.post('/auth/forgot-password', { email });
+            const normalizedEmail = normalizeEmail(email);
+            setEmail(normalizedEmail);
+            await api.post('/auth/forgot-password', { email: normalizedEmail });
             setStep(STEPS.OTP);
             startCooldown();
         } catch (err) {
@@ -79,7 +82,8 @@ const ForgotPassword = () => {
         }
         setIsLoading(true);
         try {
-            await api.post('/auth/reset-password', { email, otpCode, newPassword });
+            const normalizedEmail = normalizeEmail(email);
+            await api.post('/auth/reset-password', { email: normalizedEmail, otpCode, newPassword });
             setStep(STEPS.DONE);
         } catch (err) {
             const msg = err.response?.data?.msg || 'Reset failed.';
@@ -100,7 +104,8 @@ const ForgotPassword = () => {
         setErrorMsg('');
         setOtpCode('');
         try {
-            await api.post('/auth/forgot-password', { email });
+            const normalizedEmail = normalizeEmail(email);
+            await api.post('/auth/forgot-password', { email: normalizedEmail });
             startCooldown();
         } catch (err) {
             setErrorMsg(err.response?.data?.msg || 'Failed to resend code.');

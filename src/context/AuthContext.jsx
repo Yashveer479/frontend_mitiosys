@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 
 const AuthContext = createContext();
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -25,14 +26,16 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const register = async (name, email, password) => {
-        const res = await api.post('/auth/register', { name, email, password });
+        const normalizedEmail = normalizeEmail(email);
+        const res = await api.post('/auth/register', { name, email: normalizedEmail, password });
         localStorage.setItem('token', res.data.token);
         setUser({ token: res.data.token });
         return res.data;
     };
 
     const login = async (email, password) => {
-        const res = await api.post('/auth/login', { email, password });
+        const normalizedEmail = normalizeEmail(email);
+        const res = await api.post('/auth/login', { email: normalizedEmail, password });
         if (res.data.token) {
             localStorage.setItem('token', res.data.token);
             if (res.data.sessionId) localStorage.setItem('sessionId', res.data.sessionId);
@@ -43,11 +46,13 @@ export const AuthProvider = ({ children }) => {
     };
 
     const requestOtp = async (email) => {
-        return await api.post('/auth/request-otp', { email });
+        const normalizedEmail = normalizeEmail(email);
+        return await api.post('/auth/request-otp', { email: normalizedEmail });
     };
 
     const verifyOtp = async (email, otpCode) => {
-        const res = await api.post('/auth/verify-otp', { email, otpCode });
+        const normalizedEmail = normalizeEmail(email);
+        const res = await api.post('/auth/verify-otp', { email: normalizedEmail, otpCode });
         localStorage.setItem('token', res.data.token);
         if (res.data.sessionId) localStorage.setItem('sessionId', res.data.sessionId);
         setUser(res.data.user);
@@ -64,11 +69,13 @@ export const AuthProvider = ({ children }) => {
     };
 
     const requestEmailChange = async (currentPassword, newEmail) => {
-        return await api.post('/auth/request-email-change', { currentPassword, newEmail });
+        const normalizedEmail = normalizeEmail(newEmail);
+        return await api.post('/auth/request-email-change', { currentPassword, newEmail: normalizedEmail });
     };
 
     const verifyEmailChange = async (newEmail, otpCode) => {
-        const res = await api.post('/auth/verify-email-change', { newEmail, otpCode });
+        const normalizedEmail = normalizeEmail(newEmail);
+        const res = await api.post('/auth/verify-email-change', { newEmail: normalizedEmail, otpCode });
         setUser(prev => ({ ...prev, email: res.data.email }));
         return res.data;
     };
