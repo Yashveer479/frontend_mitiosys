@@ -103,7 +103,7 @@ const Dashboard = () => {
                     />
                     <KPICard
                         title="Pending Orders"
-                        value={stats?.activeOrders ?? 0}
+                        value={stats.activeOrders}
                         subtitle="Awaiting Fulfilment"
                         icon={ShoppingCart}
                         trend="Active"
@@ -112,11 +112,11 @@ const Dashboard = () => {
                     />
                     <KPICard
                         title="Low Stock Alerts"
-                        value={stats?.pendingDeliveries ?? 0}
+                        value={stats.pendingDeliveries}
                         subtitle="Below Minimum Level"
                         icon={AlertTriangle}
                         trend="Action Req"
-                        isAlert={(stats?.pendingDeliveries ?? 0) > 0}
+                        isAlert={stats.pendingDeliveries > 0}
                         gradient="from-rose-50/50"
                     />
                 </div>

@@ -48,7 +48,7 @@ const Settings = () => {
     const fetchWarehouses = async () => {
         try {
             const res = await api.get('/warehouses');
-            setWarehouses(Array.isArray(res.data) ? res.data : []);
+            setWarehouses(res.data);
         } catch (err) {
             console.error('Error fetching warehouses:', err);
         }

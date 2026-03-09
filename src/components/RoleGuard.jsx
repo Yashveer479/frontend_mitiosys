@@ -18,7 +18,6 @@ import { ShieldX } from 'lucide-react';
  */
 const RoleGuard = ({ roles = [], children, redirect = false }) => {
     const { user } = useAuth();
-    const navigate = useNavigate();
 
     if (!user) return <Navigate to="/login" replace />;
 

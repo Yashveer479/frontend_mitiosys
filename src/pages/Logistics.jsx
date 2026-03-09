@@ -23,9 +23,9 @@ const Logistics = () => {
                     api.get('/inventory'),
                     api.get('/warehouses')
                 ]);
-                setTransfers(Array.isArray(transRes.data) ? transRes.data : []);
-                setProducts(Array.isArray(prodRes.data) ? prodRes.data : []);
-                setWarehouses(Array.isArray(whRes.data) ? whRes.data : []);
+                setTransfers(transRes.data);
+                setProducts(prodRes.data);
+                setWarehouses(whRes.data);
                 setLoading(false);
             } catch (err) {
                 console.error('Fetch error:', err);
@@ -42,7 +42,7 @@ const Logistics = () => {
             setShowForm(false);
             // Refresh list
             const res = await api.get('/transfers');
-            setTransfers(Array.isArray(res.data) ? res.data : []);
+            setTransfers(res.data);
         } catch (err) {
             alert(err.response?.data?.msg || 'Error creating transfer');
         }
@@ -52,7 +52,7 @@ const Logistics = () => {
         try {
             await api.post(`/transfers/${id}/receive`);
             const res = await api.get('/transfers');
-            setTransfers(Array.isArray(res.data) ? res.data : []);
+            setTransfers(res.data);
         } catch (err) {
             alert(err.response?.data?.msg || 'Error receiving stock');
         }
