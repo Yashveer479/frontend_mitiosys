@@ -32,7 +32,7 @@ const Dispatch = () => {
         const fetchOrders = async () => {
             try {
                 const res = await api.get('/dispatch/pending');
-                setOrders((Array.isArray(res.data) ? res.data : []).map(o => ({
+                setOrders(res.data.map(o => ({
                     id: o.id,
                     orderNumber: o.orderNumber,
                     customer: o.Customer?.name || 'Unknown',

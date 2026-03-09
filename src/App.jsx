@@ -32,7 +32,6 @@ import ProductionTransfer from './pages/ProductionTransfer';
 import SendToLamination from './pages/SendToLamination';
 import LaminationDepartment from './pages/LaminationDepartment';
 import WarehouseInventory from './pages/WarehouseInventory';
-import SystemEngine from './pages/SystemEngine';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import RoleGuard from './components/RoleGuard';
@@ -72,17 +71,14 @@ function App() {
                                                     <Route path="/profile" element={<Profile />} />
                                                     <Route path="/change-password" element={<ChangePassword />} />
                                                     <Route path="/change-email" element={<ChangeEmail />} />
-                                    <Route path="/production/raw-entry" element={<RoleGuard roles={['admin','production']}><ProductionRawEntry /></RoleGuard>} />
-                                    <Route path="/production/thickness" element={<RoleGuard roles={['admin','production']}><ThicknessProcessing /></RoleGuard>} />
-                                    <Route path="/production/sanding" element={<RoleGuard roles={['admin','production']}><SandingProcessing /></RoleGuard>} />
-                                    <Route path="/production/grading" element={<RoleGuard roles={['admin','production']}><Grading /></RoleGuard>} />
-                                    <Route path="/warehouse/transfer" element={<RoleGuard roles={['admin','warehouse']}><ProductionTransfer /></RoleGuard>} />
-                                    <Route path="/warehouse/lamination" element={<RoleGuard roles={['admin','warehouse']}><SendToLamination /></RoleGuard>} />
-                                    <Route path="/lamination/process" element={<RoleGuard roles={['admin','lamination']}><LaminationDepartment /></RoleGuard>} />
-                                    <Route path="/warehouse/inventory" element={<RoleGuard roles={['admin','warehouse','viewer']}><WarehouseInventory /></RoleGuard>} />
-                                    <Route path="/admin/system-engine" element={<RoleGuard roles={['admin']}><SystemEngine /></RoleGuard>} />
-                                    <Route path="/admin/security-audit" element={<RoleGuard roles={['admin']}><SystemEngine tab="security" /></RoleGuard>} />
-                                    <Route path="/admin/developer-api" element={<RoleGuard roles={['admin']}><SystemEngine tab="developer" /></RoleGuard>} />
+                                    <Route path="/production/raw-entry" element={<ProductionRawEntry />} />
+                                    <Route path="/production/thickness" element={<ThicknessProcessing />} />
+                                    <Route path="/production/sanding" element={<SandingProcessing />} />
+                                    <Route path="/production/grading" element={<Grading />} />
+                                    <Route path="/warehouse/transfer" element={<ProductionTransfer />} />
+                                    <Route path="/warehouse/lamination" element={<SendToLamination />} />
+                                    <Route path="/lamination/process" element={<LaminationDepartment />} />
+                                    <Route path="/warehouse/inventory" element={<WarehouseInventory />} />
                                                 </Routes>
                                             </div>
                                         </main>

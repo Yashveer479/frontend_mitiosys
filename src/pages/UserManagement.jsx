@@ -75,8 +75,8 @@ const UserManagement = () => {
 
 
     const filteredUsers = users.filter(user =>
-        (user.name?.toLowerCase() || '').includes(filter.toLowerCase()) ||
-        (user.email?.toLowerCase() || '').includes(filter.toLowerCase())
+        user.name.toLowerCase().includes(filter.toLowerCase()) ||
+        user.email.toLowerCase().includes(filter.toLowerCase())
     );
 
     const handleAddUser = async (e) => {

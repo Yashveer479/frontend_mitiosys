@@ -29,7 +29,7 @@ const Products = () => {
     const fetchProducts = async () => {
         try {
             const res = await api.get('/products');
-            setProducts(Array.isArray(res.data) ? res.data : []);
+            setProducts(res.data);
             setLoading(false);
         } catch (err) {
             console.error(err);
