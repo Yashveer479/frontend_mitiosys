@@ -49,7 +49,7 @@ const Customers = () => {
     const fetchCustomers = async () => {
         try {
             const res = await api.get('/customers');
-            setCustomers(res.data);
+            setCustomers(Array.isArray(res.data) ? res.data : []);
             setLoading(false);
         } catch (err) {
             console.error(err);
@@ -140,7 +140,7 @@ const Customers = () => {
     };
 
     const filteredCustomers = customers.filter(c =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
         (c.contact || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (c.email || '').toLowerCase().includes(searchTerm.toLowerCase())
     );

@@ -4,30 +4,37 @@ import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, LogOut, Arrow
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
-    const { logout } = useAuth();
-    const navItems = [
-        { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-        { name: 'Production', path: '/production/raw-entry', icon: Layers },
-        { name: 'Thickness Processing', path: '/production/thickness', icon: Layers },
-        { name: 'Sanding Processing', path: '/production/sanding', icon: Layers },
-        { name: 'Grading', path: '/production/grading', icon: Layers },
-        { name: 'Production Transfer', path: '/warehouse/transfer', icon: Layers },
-        { name: 'Send to Lamination', path: '/warehouse/lamination', icon: Layers },
-        { name: 'Lamination Dept', path: '/lamination/process', icon: Layers },
-        { name: 'Warehouse Inventory', path: '/warehouse/inventory', icon: Layers },
-        { name: 'Products', path: '/products', icon: Package },
-        { name: 'Inventory', path: '/inventory', icon: Package },
-        { name: 'Stock Audit', path: '/inventory/audit', icon: ClipboardCheck },
-        { name: 'Settings', path: '/settings', icon: SettingsIcon },
-        { name: 'Logistics STO', path: '/logistics', icon: ArrowRightLeft },
-        { name: 'Warehouses', path: '/warehouses', icon: Warehouse },
-        { name: 'Sales & Orders', path: '/orders', icon: ShoppingCart },
-        { name: 'Dispatch', path: '/dispatch', icon: ArrowRightLeft },
-        { name: 'Customers', path: '/customers', icon: Users },
-        { name: 'Analytics', path: '/analytics', icon: BarChart3 },
-        { name: 'Reports', path: '/reports', icon: BarChart3 },
-        { name: 'Users', path: '/users', icon: Shield },
+    const { logout, user } = useAuth();
+    const role = user?.role || 'viewer';
+
+    const allNavItems = [
+        { name: 'Dashboard',           path: '/',                       icon: LayoutDashboard, roles: null },
+        { name: 'Production',          path: '/production/raw-entry',   icon: Layers, roles: ['admin','production'] },
+        { name: 'Thickness Processing',path: '/production/thickness',   icon: Layers, roles: ['admin','production'] },
+        { name: 'Sanding Processing',  path: '/production/sanding',     icon: Layers, roles: ['admin','production'] },
+        { name: 'Grading',             path: '/production/grading',     icon: Layers, roles: ['admin','production'] },
+        { name: 'Production Transfer', path: '/warehouse/transfer',     icon: Layers, roles: ['admin','warehouse'] },
+        { name: 'Send to Lamination',  path: '/warehouse/lamination',   icon: Layers, roles: ['admin','warehouse'] },
+        { name: 'Lamination Dept',     path: '/lamination/process',     icon: Layers, roles: ['admin','lamination'] },
+        { name: 'Warehouse Inventory', path: '/warehouse/inventory',    icon: Layers, roles: ['admin','warehouse','viewer'] },
+        { name: 'Products',            path: '/products',               icon: Package, roles: null },
+        { name: 'Inventory',           path: '/inventory',              icon: Package, roles: null },
+        { name: 'Stock Audit',         path: '/inventory/audit',        icon: ClipboardCheck, roles: ['admin'] },
+        { name: 'Settings',            path: '/settings',               icon: SettingsIcon, roles: ['admin'] },
+        { name: 'Logistics STO',       path: '/logistics',              icon: ArrowRightLeft, roles: null },
+        { name: 'Warehouses',          path: '/warehouses',             icon: Warehouse, roles: ['admin','warehouse'] },
+        { name: 'Sales & Orders',      path: '/orders',                 icon: ShoppingCart, roles: null },
+        { name: 'Dispatch',            path: '/dispatch',               icon: ArrowRightLeft, roles: null },
+        { name: 'Customers',           path: '/customers',              icon: Users, roles: null },
+        { name: 'Analytics',           path: '/analytics',              icon: BarChart3, roles: ['admin','viewer'] },
+        { name: 'Reports',             path: '/reports',                icon: BarChart3, roles: ['admin','viewer'] },
+        { name: 'Users',               path: '/users',                  icon: Shield, roles: ['admin'] },
+        { name: 'System Engine',       path: '/admin/system-engine',   icon: Shield, roles: ['admin'] },
+        { name: 'Security Audit',      path: '/admin/security-audit',  icon: Shield, roles: ['admin'] },
+        { name: 'Developer API',       path: '/admin/developer-api',   icon: Shield, roles: ['admin'] },
     ];
+
+    const navItems = allNavItems.filter(item => !item.roles || item.roles.includes(role));
 
     return (
         <div className="fixed left-0 top-0 h-screen w-64 bg-secondary text-white flex flex-col shadow-xl z-30 overflow-hidden">

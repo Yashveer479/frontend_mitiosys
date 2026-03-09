@@ -27,8 +27,8 @@ const NewOrderModal = ({ isOpen, onClose, onRefresh }) => {
                     api.get('/customers'),
                     api.get('/inventory')
                 ]);
-                setCustomers(custRes.data);
-                setProducts(prodRes.data);
+                setCustomers(Array.isArray(custRes.data) ? custRes.data : []);
+                setProducts(Array.isArray(prodRes.data) ? prodRes.data : []);
             };
             fetchData();
         }
@@ -36,7 +36,8 @@ const NewOrderModal = ({ isOpen, onClose, onRefresh }) => {
 
     const handleAddItem = () => {
         if (!currentItem.productId || currentItem.quantity <= 0) return;
-        const prod = products.find(p => p._id === currentItem.productId);
+        const prod = products.find(p => String(p.id) === String(currentItem.productId));
+        if (!prod) return;
         setFormData({
             ...formData,
             items: [...formData.items, { ...currentItem, name: prod.name, thickness: prod.thickness, finish: prod.finish }]

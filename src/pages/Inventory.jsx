@@ -64,7 +64,7 @@ const Inventory = () => {
     const fetchData = async () => {
         try {
             const res = await api.get('/inventory');
-            setProducts(res.data);
+            setProducts(Array.isArray(res.data) ? res.data : []);
             setLoading(false);
         } catch (err) {
             console.error(err);
@@ -81,9 +81,9 @@ const Inventory = () => {
     const fetchAuxData = async () => {
         try {
             const wRes = await api.get('/warehouses');
-            setWarehouses(wRes.data);
+            setWarehouses(Array.isArray(wRes.data) ? wRes.data : []);
             const pRes = await api.get('/products');
-            setAvailableProducts(pRes.data);
+            setAvailableProducts(Array.isArray(pRes.data) ? pRes.data : []);
         } catch (err) {
             console.error("Failed to fetch aux data", err);
         }
