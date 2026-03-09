@@ -1,12 +1,20 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, LogOut, ArrowRightLeft, Warehouse, Shield, Settings as SettingsIcon, ClipboardCheck } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, LogOut, ArrowRightLeft, Warehouse, Shield, Settings as SettingsIcon, ClipboardCheck, Layers } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
     const { logout } = useAuth();
     const navItems = [
         { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+        { name: 'Production', path: '/production/raw-entry', icon: Layers },
+        { name: 'Thickness Processing', path: '/production/thickness', icon: Layers },
+        { name: 'Sanding Processing', path: '/production/sanding', icon: Layers },
+        { name: 'Grading', path: '/production/grading', icon: Layers },
+        { name: 'Production Transfer', path: '/warehouse/transfer', icon: Layers },
+        { name: 'Send to Lamination', path: '/warehouse/lamination', icon: Layers },
+        { name: 'Lamination Dept', path: '/lamination/process', icon: Layers },
+        { name: 'Warehouse Inventory', path: '/warehouse/inventory', icon: Layers },
         { name: 'Products', path: '/products', icon: Package },
         { name: 'Inventory', path: '/inventory', icon: Package },
         { name: 'Stock Audit', path: '/inventory/audit', icon: ClipboardCheck },

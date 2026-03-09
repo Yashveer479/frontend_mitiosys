@@ -24,6 +24,14 @@ import Reports from './pages/Reports';
 import Analytics from './pages/Analytics';
 import Dispatch from './pages/Dispatch';
 import StockAudit from './pages/StockAudit';
+import ProductionRawEntry from './pages/ProductionRawEntry';
+import ThicknessProcessing from './pages/ThicknessProcessing';
+import SandingProcessing from './pages/SandingProcessing';
+import Grading from './pages/Grading';
+import ProductionTransfer from './pages/ProductionTransfer';
+import SendToLamination from './pages/SendToLamination';
+import LaminationDepartment from './pages/LaminationDepartment';
+import WarehouseInventory from './pages/WarehouseInventory';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import RoleGuard from './components/RoleGuard';
@@ -63,6 +71,14 @@ function App() {
                                                     <Route path="/profile" element={<Profile />} />
                                                     <Route path="/change-password" element={<ChangePassword />} />
                                                     <Route path="/change-email" element={<ChangeEmail />} />
+                                    <Route path="/production/raw-entry" element={<ProductionRawEntry />} />
+                                    <Route path="/production/thickness" element={<ThicknessProcessing />} />
+                                    <Route path="/production/sanding" element={<SandingProcessing />} />
+                                    <Route path="/production/grading" element={<Grading />} />
+                                    <Route path="/warehouse/transfer" element={<ProductionTransfer />} />
+                                    <Route path="/warehouse/lamination" element={<SendToLamination />} />
+                                    <Route path="/lamination/process" element={<LaminationDepartment />} />
+                                    <Route path="/warehouse/inventory" element={<WarehouseInventory />} />
                                                 </Routes>
                                             </div>
                                         </main>
