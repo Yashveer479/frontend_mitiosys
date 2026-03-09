@@ -12,7 +12,7 @@ const Orders = () => {
     const fetchOrders = async () => {
         try {
             const res = await api.get('/orders');
-            setOrders(res.data);
+            setOrders(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error(err);
         }
