@@ -46,6 +46,8 @@ const Inventory = () => {
 
     const [refreshing, setRefreshing] = useState(false);
     const isLowStockView = location.pathname === '/inventory/low-stock';
+    const isRestockView = location.pathname === '/inventory/restock';
+    const isAddStockView = location.pathname === '/inventory/add-stock';
 
     useEffect(() => {
         fetchData();
@@ -63,6 +65,12 @@ const Inventory = () => {
             clearInterval(interval);
         };
     }, []);
+
+    useEffect(() => {
+        if (isAddStockView) {
+            setIsModalOpen(true);
+        }
+    }, [isAddStockView]);
 
     const fetchData = async () => {
         try {
@@ -188,7 +196,7 @@ const Inventory = () => {
                         <nav className="flex items-center space-x-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                             <span>Supply Chain</span>
                             <span className="text-slate-300">•</span>
-                            <span className="text-blue-600">{isLowStockView ? 'Low Stock Alerts' : 'Stock Master'}</span>
+                            <span className="text-blue-600">{isLowStockView ? 'Low Stock Alerts' : isRestockView ? 'Restock Command Center' : isAddStockView ? 'Stock Intake' : 'Stock Master'}</span>
                         </nav>
                     </div>
                     <div className="flex items-center space-x-3">

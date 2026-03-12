@@ -5,18 +5,20 @@ import {
     Package,
     ShoppingCart,
     BarChart3,
-    LayoutDashboard,
     AlertTriangle,
-    Clock,
     Bell,
     TrendingUp,
-    ArrowUpRight,
-    ArrowDownRight,
-    Circle,
     ChevronRight,
-    Globe
+    Globe,
+    Factory,
+    Boxes,
+    FileText,
+    ArrowRightLeft
 } from 'lucide-react';
 import mitioLogo from '../assets/logo.png';
+import DashboardCard from '../components/dashboard/DashboardCard';
+import QuickActionsMenu from '../components/dashboard/QuickActionsMenu';
+import NotificationPanel from '../components/dashboard/NotificationPanel';
 
 const INDUSTRIAL_PERFORMANCE_DATA = [
     { month: 1, label: 'JAN', year: 2026, plant: 'SITE-A', productionOutput: 420, marketAbsorption: 388, efficiency: 92.4 },
@@ -67,6 +69,64 @@ const Dashboard = () => {
 
     const activeIndustrialData = industrialView === 'annual' ? annualIndustrialData : INDUSTRIAL_PERFORMANCE_DATA;
     const maxIndustrialOutput = Math.max(...activeIndustrialData.map((item) => item.productionOutput), 1);
+
+    const quickActions = [
+        {
+            label: 'Create Production Batch',
+            description: 'Launch production batch workflow',
+            path: '/production/create-batch',
+            icon: Factory
+        },
+        {
+            label: 'Add Inventory Stock',
+            description: 'Receive new inventory into stores',
+            path: '/inventory/add-stock',
+            icon: Boxes
+        },
+        {
+            label: 'Create Sales Order',
+            description: 'Start a new customer sales order',
+            path: '/sales/create-order',
+            icon: FileText
+        },
+        {
+            label: 'Transfer Warehouse Stock',
+            description: 'Move stock between warehouse nodes',
+            path: '/warehouse/transfer',
+            icon: ArrowRightLeft
+        },
+        {
+            label: 'Generate Production Report',
+            description: 'Open the production analytics console',
+            path: '/reports/production',
+            icon: BarChart3
+        }
+    ];
+
+    const intelligenceAlerts = [
+        {
+            type: 'SECURITY',
+            msg: 'Payment terminal at Nakulabye synchronized.',
+            time: '12m',
+            path: '/system/status'
+        },
+        {
+            type: 'CRITICAL',
+            msg: 'Emergency restock required for MDF-18.',
+            time: '45m',
+            isAlert: true,
+            path: '/inventory/restock'
+        },
+        {
+            type: 'NETWORK',
+            msg: 'New supply chain node added in Jinja.',
+            time: '3h',
+            path: '/warehouse/locations'
+        }
+    ].map((alert) => ({
+        ...alert,
+        onClick: () => navigate(alert.path)
+    }));
 
     const handleIndustrialBarClick = (item) => {
         const params = new URLSearchParams({
@@ -130,6 +190,7 @@ const Dashboard = () => {
                         </div>
                     </div>
                     <div className="flex items-center space-x-4">
+                        <QuickActionsMenu actions={quickActions} navigate={navigate} />
                         <div className="px-4 py-2.5 bg-white/70 backdrop-blur-md rounded-xl border border-white shadow-sm flex items-center space-x-3 text-xs font-bold text-slate-700">
                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                             <span>Real-Time: <span className="text-slate-400">Sync Active</span></span>
@@ -142,7 +203,7 @@ const Dashboard = () => {
 
                 {/* KPI Grid with Subtle Gradients */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <KPICard
+                    <DashboardCard
                         title="Total Inventory"
                         value={(stats?.totalInventory || 0).toLocaleString()}
                         subtitle="Stock Units"
@@ -152,7 +213,7 @@ const Dashboard = () => {
                         gradient="from-blue-50/50"
                         onClick={() => navigate('/inventory')}
                     />
-                    <KPICard
+                    <DashboardCard
                         title="Today's Sales"
                         value={`UDX ${(stats?.monthlyRevenue || 0).toLocaleString()}`}
                         subtitle="Daily Revenue"
@@ -162,7 +223,7 @@ const Dashboard = () => {
                         gradient="from-indigo-50/50"
                         onClick={() => navigate('/sales/orders')}
                     />
-                    <KPICard
+                    <DashboardCard
                         title="Pending Orders"
                         value={stats.activeOrders}
                         subtitle="Awaiting Fulfilment"
@@ -172,7 +233,7 @@ const Dashboard = () => {
                         gradient="from-slate-50/50"
                         onClick={() => navigate('/sales/pending')}
                     />
-                    <KPICard
+                    <DashboardCard
                         title="Low Stock Alerts"
                         value={stats.pendingDeliveries}
                         subtitle="Below Minimum Level"
@@ -271,7 +332,11 @@ const Dashboard = () => {
                                     <h3 className="text-sm font-bold uppercase tracking-widest opacity-80 mb-2">Quarterly Projection</h3>
                                     <p className="text-4xl font-black tracking-tighter leading-none">+28.5%</p>
                                     <p className="text-blue-100 text-xs mt-4 font-medium leading-relaxed">System projects a significant increase in inter-depot requirements for the next cycle.</p>
-                                    <button className="mt-8 flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/reports/production')}
+                                        className="mt-8 flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                                    >
                                         <span>View Models</span>
                                         <ChevronRight size={14} />
                                     </button>
@@ -284,33 +349,7 @@ const Dashboard = () => {
                     <div className="lg:col-span-4 space-y-8">
 
                         {/* Notifications Card */}
-                        <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-                            <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center space-x-2">
-                                    <Bell size={16} className="text-blue-600" />
-                                    <span>Intelligence</span>
-                                </h3>
-                                <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                            </div>
-                            <div className="divide-y divide-slate-50">
-                                <NotificationItem
-                                    type="SECURITY"
-                                    msg="Payment terminal at Nakulabye synchronized."
-                                    time="12m"
-                                />
-                                <NotificationItem
-                                    type="CRITICAL"
-                                    msg="Emergency restock required for MDF-18."
-                                    time="45m"
-                                    isAlert={true}
-                                />
-                                <NotificationItem
-                                    type="NETWORK"
-                                    msg="New supply chain node added in Jinja."
-                                    time="3h"
-                                />
-                            </div>
-                        </div>
+                        <NotificationPanel alerts={intelligenceAlerts} />
 
                         {/* Operational Activity with Glassmorphism feel */}
                         <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-2xl shadow-slate-900/40 relative overflow-hidden group">
@@ -324,7 +363,13 @@ const Dashboard = () => {
                                 <LogItem user="James M." action="Audited" target="SITE-A HUB" time="13:45" dark={true} />
                                 <LogItem user="System" action="Optimized" target="Sync Cycle" time="12:00" dark={true} />
                             </div>
-                            <button className="w-full mt-10 py-3 bg-white/10 hover:bg-white/20 transition-all rounded-xl text-[10px] font-black uppercase tracking-[0.25em] border border-white/10"> Full Manifest </button>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/analytics')}
+                                className="w-full mt-10 py-3 bg-white/10 hover:bg-white/20 transition-all rounded-xl text-[10px] font-black uppercase tracking-[0.25em] border border-white/10"
+                            >
+                                Full Manifest
+                            </button>
                         </div>
 
                     </div>
@@ -333,40 +378,6 @@ const Dashboard = () => {
         </div>
     );
 };
-
-const KPICard = ({ title, value, subtitle, icon: Icon, trend, isPositive, isAlert, gradient, onClick }) => (
-    <div
-        role="button"
-        tabIndex={0}
-        onClick={onClick}
-        onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onClick?.();
-            }
-        }}
-        className={`bg-white p-6 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 hover:scale-[1.01] relative overflow-hidden group cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-2`}
-    >
-        <div className={`absolute inset-0 bg-gradient-to-br ${gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
-        <div className="relative z-10">
-            <div className="flex items-center justify-between mb-6">
-                <div className={`p-3 rounded-2xl ${isAlert ? 'bg-rose-50 text-rose-600 shadow-rose-100' : 'bg-blue-50 text-blue-600 shadow-blue-100'} shadow-lg transition-transform duration-500 group-hover:scale-110`}>
-                    <Icon size={22} strokeWidth={2.5} />
-                </div>
-                <div className={`flex items-center space-x-1 text-[10px] font-black tracking-widest uppercase ${isAlert ? 'text-rose-600' : isPositive ? 'text-emerald-600' : 'text-slate-400'
-                    }`}>
-                    {trend === 'Critical' ? <AlertTriangle size={12} strokeWidth={3} /> : isPositive ? <ArrowUpRight size={14} strokeWidth={3} /> : <ArrowDownRight size={14} strokeWidth={3} />}
-                    <span>{trend}</span>
-                </div>
-            </div>
-            <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-2">{title}</p>
-                <h3 className="text-3xl font-black text-slate-900 tracking-tighter">{value}</h3>
-                <p className="text-[10px] font-bold text-slate-500 mt-2 uppercase tracking-widest opacity-60">{subtitle}</p>
-            </div>
-        </div>
-    </div>
-);
 
 const DistItem = ({ label, value, color }) => (
     <div className="space-y-3">
@@ -377,16 +388,6 @@ const DistItem = ({ label, value, color }) => (
         <div className="h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100 shadow-inner">
             <div className={`h-full ${color} rounded-full transition-all duration-1000 ease-out`} style={{ width: value }}></div>
         </div>
-    </div>
-);
-
-const NotificationItem = ({ type, msg, time, isAlert }) => (
-    <div className="p-5 hover:bg-slate-50/80 transition-all cursor-pointer group">
-        <div className="flex items-center justify-between mb-2">
-            <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${isAlert ? 'text-rose-600' : 'text-blue-600'}`}>{type}</span>
-            <span className="text-[9px] font-black text-slate-400">{time}</span>
-        </div>
-        <p className="text-xs font-bold text-slate-700 leading-tight group-hover:text-slate-900">{msg}</p>
     </div>
 );
 

@@ -1,8 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { ExternalLink, Globe, Shield, Terminal, Clock, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import mitioLogo from '../assets/logo.png';
+import FooterNavigation from './dashboard/FooterNavigation';
+
+const PLATFORM_LINKS = [
+    { label: 'Documentation', path: '/docs' },
+    { label: 'System Status', path: '/system-status', isNew: true },
+    { label: 'Developer API', path: '/developer-api' }
+];
+
+const INFORMATION_LINKS = [
+    { label: 'Privacy Policy', path: '/privacy-policy' },
+    { label: 'Terms of Service', path: '/terms' },
+    { label: 'Security Audit', path: '/security-audit' }
+];
 
 const Footer = () => {
+    const navigate = useNavigate();
     const [settings, setSettings] = useState({
         company_name: 'Mitiosys Ltd',
         application_version: '2.4.0 (Build 8921)',
@@ -68,16 +83,8 @@ const Footer = () => {
 
                 {/* Navigation Links Grid */}
                 <div className="lg:col-span-3 grid grid-cols-2 gap-8">
-                    <FooterColumn title="Platform">
-                        <FooterLink label="Documentation" />
-                        <FooterLink label="System Status" isNew />
-                        <FooterLink label="Developer API" />
-                    </FooterColumn>
-                    <FooterColumn title="Information">
-                        <FooterLink label="Privacy Policy" />
-                        <FooterLink label="Terms of Service" />
-                        <FooterLink label="Security Audit" />
-                    </FooterColumn>
+                    <FooterNavigation title="Platform" links={PLATFORM_LINKS} navigate={navigate} />
+                    <FooterNavigation title="Information" links={INFORMATION_LINKS} navigate={navigate} />
                 </div>
 
                 {/* Intelligence Bar Section */}
@@ -114,9 +121,13 @@ const Footer = () => {
                         <span>Support Center</span>
                         <ExternalLink size={10} />
                     </a>
-                    <a href="#" className="text-[11px] font-bold text-slate-500 hover:text-blue-600 transition-colors">
+                    <button
+                        type="button"
+                        onClick={() => navigate('/privacy-policy')}
+                        className="text-[11px] font-bold text-slate-500 hover:text-blue-600 transition-colors"
+                    >
                         Privacy Policy
-                    </a>
+                    </button>
                 </div>
 
             </div>
@@ -144,26 +155,6 @@ const ClockItem = ({ city, tz }) => {
         </div>
     );
 };
-
-const FooterColumn = ({ title, children }) => (
-    <div className="space-y-4">
-        <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">{title}</h5>
-        <div className="flex flex-col space-y-2.5">
-            {children}
-        </div>
-    </div>
-);
-
-const FooterLink = ({ label, isNew }) => (
-    <a href="#" className="group flex items-center space-x-1.5 text-[11px] font-bold text-slate-500 hover:text-blue-600 transition-all duration-300 tracking-wide">
-        <span className="relative overflow-hidden">
-            {label}
-            <span className="absolute bottom-0 left-0 w-full h-px bg-blue-600 -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></span>
-        </span>
-        {isNew && <span className="text-[8px] bg-blue-100 text-blue-600 px-1 py-0.5 rounded font-black">NEW</span>}
-        <ExternalLink size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-    </a>
-);
 
 const SocialIcon = ({ icon: Icon }) => (
     <button className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:text-blue-600 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10 transition-all active:scale-95">
