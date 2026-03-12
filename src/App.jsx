@@ -32,6 +32,7 @@ import ProductionTransfer from './pages/ProductionTransfer';
 import SendToLamination from './pages/SendToLamination';
 import LaminationDepartment from './pages/LaminationDepartment';
 import WarehouseInventory from './pages/WarehouseInventory';
+import Suppliers from './pages/Suppliers';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import RoleGuard from './components/RoleGuard';
@@ -79,6 +80,7 @@ function App() {
                                     <Route path="/warehouse/lamination" element={<SendToLamination />} />
                                     <Route path="/lamination/process" element={<LaminationDepartment />} />
                                     <Route path="/warehouse/inventory" element={<WarehouseInventory />} />
+                                    <Route path="/inventory/suppliers" element={<Suppliers />} />
                                                 </Routes>
                                             </div>
                                         </main>
