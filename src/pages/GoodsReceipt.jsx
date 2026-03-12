@@ -31,15 +31,16 @@ const GoodsReceipt = () => {
 
     useEffect(() => {
         const fetchInitialData = async () => {
-            try {
-                const [poRes, grnRes] = await Promise.all([
-                    api.get('/purchase-orders'),
-                    api.get('/goods-receipt')
-                ]);
-                setPurchaseOrders(poRes.data);
-                setRecentGRNs(grnRes.data.slice(0, 10));
-            } catch (err) {
-                console.error('Failed to fetch initial data', err);
+            const [poResult, grnResult] = await Promise.allSettled([
+                api.get('/purchase-orders'),
+                api.get('/goods-receipt')
+            ]);
+            if (poResult.status === 'fulfilled') {
+                setPurchaseOrders(Array.isArray(poResult.value.data) ? poResult.value.data : []);
+            }
+            if (grnResult.status === 'fulfilled') {
+                const data = grnResult.value.data;
+                setRecentGRNs(Array.isArray(data) ? data.slice(0, 10) : []);
             }
         };
         fetchInitialData();
@@ -49,7 +50,8 @@ const GoodsReceipt = () => {
         const poId = e.target.value;
         const selectedPO = purchaseOrders.find(po => String(po.id) === String(poId));
         setFormData(prev => ({ ...prev, purchase_order_id: poId, purchase_item_id: '' }));
-        setPurchaseItems(selectedPO?.items || []);
+        const items = selectedPO?.items;
+        setPurchaseItems(Array.isArray(items) ? items : []);
     };
 
     const handleChange = (e) => {
@@ -71,7 +73,8 @@ const GoodsReceipt = () => {
             setSuccess(true);
             // Refresh recent GRNs
             const grnRes = await api.get('/goods-receipt');
-            setRecentGRNs(grnRes.data.slice(0, 10));
+            const grnData = grnRes.data;
+            setRecentGRNs(Array.isArray(grnData) ? grnData.slice(0, 10) : []);
             setFormData({
                 purchase_order_id: '',
                 purchase_item_id: '',
