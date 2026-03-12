@@ -21,6 +21,7 @@ const Sidebar = () => {
         { name: 'Suppliers', path: '/inventory/suppliers', icon: Truck },
         { name: 'Purchase Orders', path: '/inventory/purchase-orders', icon: ShoppingBag },
         { name: 'Goods Receipt', path: '/inventory/goods-receipt', icon: ClipboardCheck },
+        { name: 'Inventory History', path: '/inventory/history', icon: ClipboardCheck },
         { name: 'Settings', path: '/settings', icon: SettingsIcon },
         { name: 'Logistics STO', path: '/logistics', icon: ArrowRightLeft },
         { name: 'Warehouses', path: '/warehouses', icon: Warehouse },
