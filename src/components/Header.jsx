@@ -1,16 +1,71 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Zap, Search, Bell, User, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Zap, Search, Bell, User, ArrowUpRight, ArrowDownRight, Package, Factory, ShoppingCart, CheckCheck, X } from 'lucide-react';
 import { toServerUrl } from '../services/urlConfig';
+import api from '../services/api';
+
+const NOTIFICATION_ICONS = {
+    LOW_STOCK: { icon: Package, color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-100' },
+    PRODUCTION_COMPLETE: { icon: Factory, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    ORDER_CREATED: { icon: ShoppingCart, color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100' },
+};
 
 const Header = () => {
     const { user } = useAuth();
     const [time, setTime] = React.useState(new Date());
+    const [notifications, setNotifications] = React.useState([]);
+    const [unreadCount, setUnreadCount] = React.useState(0);
+    const [bellOpen, setBellOpen] = React.useState(false);
+    const bellRef = React.useRef(null);
 
     React.useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
+
+    const fetchNotifications = React.useCallback(async () => {
+        try {
+            const res = await api.get('/api/notifications');
+            setNotifications(res.data);
+            setUnreadCount(res.data.filter(n => !n.is_read).length);
+        } catch (_) {
+            // silently fail — don't block UI
+        }
+    }, []);
+
+    // Fetch on mount + poll every 30 s
+    React.useEffect(() => {
+        fetchNotifications();
+        const interval = setInterval(fetchNotifications, 30000);
+        return () => clearInterval(interval);
+    }, [fetchNotifications]);
+
+    // Close dropdown when clicking outside
+    React.useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (bellRef.current && !bellRef.current.contains(e.target)) {
+                setBellOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleMarkRead = async (id) => {
+        try {
+            await api.patch(`/api/notifications/${id}/read`);
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+            setUnreadCount(prev => Math.max(0, prev - 1));
+        } catch (_) {}
+    };
+
+    const handleMarkAllRead = async () => {
+        try {
+            await api.patch('/api/notifications/read-all');
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+            setUnreadCount(0);
+        } catch (_) {}
+    };
 
     const avatarUrl = toServerUrl(user?.avatar);
 
@@ -65,10 +120,98 @@ const Header = () => {
                     </div>
 
                     <div className="flex items-center space-x-2">
-                        <button className="relative p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all group">
-                            <Bell size={18} />
-                            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white ring-2 ring-rose-500/20 group-hover:animate-ping"></span>
-                        </button>
+                        {/* Notification Bell */}
+                        <div className="relative" ref={bellRef}>
+                            <button
+                                onClick={() => setBellOpen(o => !o)}
+                                className="relative p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all group"
+                                aria-label="Notifications"
+                            >
+                                <Bell size={18} />
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border border-white leading-none">
+                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            {bellOpen && (
+                                <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden">
+                                    {/* Header */}
+                                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                                        <div className="flex items-center space-x-2">
+                                            <Bell size={14} className="text-blue-600" />
+                                            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Notifications</span>
+                                            {unreadCount > 0 && (
+                                                <span className="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">{unreadCount}</span>
+                                            )}
+                                        </div>
+                                        {unreadCount > 0 && (
+                                            <button
+                                                onClick={handleMarkAllRead}
+                                                className="flex items-center space-x-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                                            >
+                                                <CheckCheck size={12} />
+                                                <span>Mark all read</span>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Notification list */}
+                                    <div className="max-h-80 overflow-y-auto">
+                                        {notifications.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center py-10 text-slate-300">
+                                                <Bell size={28} />
+                                                <p className="text-xs font-semibold mt-2">No notifications yet</p>
+                                            </div>
+                                        ) : (
+                                            notifications.map(n => {
+                                                const config = NOTIFICATION_ICONS[n.type] || NOTIFICATION_ICONS.ORDER_CREATED;
+                                                const Icon = config.icon;
+                                                const ts = new Date(n.created_at);
+                                                const timeStr = ts.toLocaleDateString() === new Date().toLocaleDateString()
+                                                    ? ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                                    : ts.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                                                return (
+                                                    <div
+                                                        key={n.id}
+                                                        className={`flex items-start space-x-3 px-4 py-3 border-b border-slate-50 transition-colors ${
+                                                            n.is_read ? 'opacity-60' : 'bg-blue-50/30'
+                                                        }`}
+                                                    >
+                                                        <div className={`w-8 h-8 rounded-lg ${config.bg} ${config.border} border flex items-center justify-center shrink-0 mt-0.5`}>
+                                                            <Icon size={14} className={config.color} />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-xs font-bold text-slate-800 leading-tight truncate">{n.title}</p>
+                                                            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug line-clamp-2">{n.message}</p>
+                                                            <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">{timeStr}</p>
+                                                        </div>
+                                                        {!n.is_read && (
+                                                            <button
+                                                                onClick={() => handleMarkRead(n.id)}
+                                                                className="shrink-0 p-1 rounded-lg hover:bg-slate-100 text-slate-300 hover:text-blue-500 transition-colors"
+                                                                title="Mark as read"
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+
+                                    {notifications.length > 0 && (
+                                        <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50">
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                                                Showing latest {notifications.length} notifications
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
                         <button onClick={() => window.location.href = '/profile'} className="flex items-center space-x-3 pl-4 border-l border-slate-100 cursor-pointer group text-left">
                             <div className="hidden sm:block">
