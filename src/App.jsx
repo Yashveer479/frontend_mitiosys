@@ -75,6 +75,7 @@ function App() {
                                                     <Route path="/dispatch" element={<Dispatch />} />
                                                     <Route path="/analytics" element={<Analytics />} />
                                                     <Route path="/reports" element={<RoleGuard roles={['admin', 'manager']}><Reports /></RoleGuard>} />
+                                                    <Route path="/reports/production" element={<RoleGuard roles={['admin', 'manager']}><Reports /></RoleGuard>} />
                                                     <Route path="/users" element={<RoleGuard roles={['admin']}><UserManagement /></RoleGuard>} />
                                                     <Route path="/settings" element={<RoleGuard roles={['admin']}><Settings /></RoleGuard>} />
                                                     <Route path="/profile" element={<Profile />} />

@@ -18,11 +18,37 @@ import {
 } from 'lucide-react';
 import mitioLogo from '../assets/logo.png';
 
+const INDUSTRIAL_PERFORMANCE_DATA = [
+    { month: 1, label: 'JAN', year: 2026, plant: 'SITE-A', productionOutput: 420, marketAbsorption: 388, efficiency: 92.4 },
+    { month: 2, label: 'FEB', year: 2026, plant: 'SITE-A', productionOutput: 468, marketAbsorption: 421, efficiency: 89.9 },
+    { month: 3, label: 'MAR', year: 2026, plant: 'SITE-A', productionOutput: 455, marketAbsorption: 430, efficiency: 94.5 },
+    { month: 4, label: 'APR', year: 2026, plant: 'SITE-A', productionOutput: 512, marketAbsorption: 471, efficiency: 92.0 },
+    { month: 5, label: 'MAY', year: 2026, plant: 'SITE-A', productionOutput: 536, marketAbsorption: 504, efficiency: 94.0 },
+    { month: 6, label: 'JUN', year: 2026, plant: 'SITE-A', productionOutput: 548, marketAbsorption: 518, efficiency: 94.5 },
+    { month: 7, label: 'JUL', year: 2026, plant: 'SITE-A', productionOutput: 501, marketAbsorption: 458, efficiency: 91.4 },
+    { month: 8, label: 'AUG', year: 2026, plant: 'SITE-A', productionOutput: 563, marketAbsorption: 524, efficiency: 93.1 },
+    { month: 9, label: 'SEP', year: 2026, plant: 'SITE-A', productionOutput: 520, marketAbsorption: 479, efficiency: 92.1 },
+    { month: 10, label: 'OCT', year: 2026, plant: 'SITE-A', productionOutput: 584, marketAbsorption: 548, efficiency: 93.8 },
+    { month: 11, label: 'NOV', year: 2026, plant: 'SITE-A', productionOutput: 556, marketAbsorption: 513, efficiency: 92.3 },
+    { month: 12, label: 'DEC', year: 2026, plant: 'SITE-A', productionOutput: 602, marketAbsorption: 571, efficiency: 94.9 },
+];
+
 const Dashboard = () => {
     const navigate = useNavigate();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const maxIndustrialOutput = Math.max(...INDUSTRIAL_PERFORMANCE_DATA.map((item) => item.productionOutput), 1);
+
+    const handleIndustrialBarClick = (item) => {
+        const search = new URLSearchParams({
+            month: String(item.month),
+            year: String(item.year),
+            plant: item.plant,
+        }).toString();
+
+        navigate(`/reports/production?${search}`);
+    };
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -146,17 +172,40 @@ const Dashboard = () => {
                                 </div>
                             </div>
 
+                            <div className="mb-5 flex items-center justify-between gap-4 rounded-2xl bg-slate-50 px-4 py-3">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Interactive Report Drilldown</p>
+                                    <p className="mt-1 text-xs font-bold text-slate-600">Click any month to open the filtered production report.</p>
+                                </div>
+                                <div className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 shadow-sm">
+                                    Plant: SITE-A
+                                </div>
+                            </div>
+
                             <div className="h-72 flex items-end justify-between space-x-4 pb-4">
-                                {[45, 70, 50, 95, 75, 85, 60, 80, 55, 90, 75, 100].map((h, i) => (
-                                    <div key={i} className="flex-1 flex flex-col items-center group/bar relative h-full justify-end">
-                                        <div className="absolute -top-10 bg-slate-900 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg opacity-0 group-hover/bar:opacity-100 transition-all transform group-hover/bar:-translate-y-2 pointer-events-none z-10">
-                                            {h}%
+                                {INDUSTRIAL_PERFORMANCE_DATA.map((item) => (
+                                    <button
+                                        key={`${item.year}-${item.month}`}
+                                        type="button"
+                                        onClick={() => handleIndustrialBarClick(item)}
+                                        className="flex-1 flex flex-col items-center group/bar relative h-full justify-end cursor-pointer focus:outline-none"
+                                        aria-label={`Open production report for ${item.label} ${item.year} at ${item.plant}`}
+                                    >
+                                        <div className="absolute -top-24 left-1/2 z-10 hidden w-44 -translate-x-1/2 rounded-xl bg-slate-950 px-3 py-2 text-left text-white shadow-2xl group-hover/bar:block group-focus/bar:block">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">{item.label} {item.year}</p>
+                                            <p className="mt-2 text-[11px] font-bold text-slate-100">Production output: {item.productionOutput.toLocaleString()} units</p>
+                                            <p className="mt-1 text-[11px] font-bold text-slate-200">Market absorption: {item.marketAbsorption.toLocaleString()} units</p>
+                                            <p className="mt-1 text-[11px] font-bold text-emerald-300">Efficiency: {item.efficiency.toFixed(1)}%</p>
                                         </div>
-                                        <div className="w-full bg-slate-50 rounded-t-lg relative h-full overflow-hidden">
-                                            <div className="absolute bottom-0 w-full bg-gradient-to-t from-blue-700 via-blue-500 to-blue-400 rounded-t-lg transition-all duration-1000 group-hover/bar:brightness-110" style={{ height: `${h}%` }}></div>
+                                        <div className="w-full bg-slate-50 rounded-t-lg relative h-full overflow-hidden border border-transparent group-hover/bar:border-blue-100 transition-colors">
+                                            <div
+                                                className="absolute bottom-0 w-full bg-gradient-to-t from-blue-700 via-blue-500 to-blue-400 rounded-t-lg transition-all duration-1000 group-hover/bar:brightness-110 group-hover/bar:scale-[1.02]"
+                                                style={{ height: `${Math.max((item.productionOutput / maxIndustrialOutput) * 100, 12)}%` }}
+                                            ></div>
                                         </div>
-                                        <span className="text-[10px] font-black text-slate-400 mt-4 uppercase tracking-tighter">{['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'][i]}</span>
-                                    </div>
+                                        <span className="text-[10px] font-black text-slate-400 mt-4 uppercase tracking-tighter">{item.label}</span>
+                                        <span className="mt-1 text-[10px] font-bold text-slate-400">{item.efficiency.toFixed(1)}% eff.</span>
+                                    </button>
                                 ))}
                             </div>
                         </div>

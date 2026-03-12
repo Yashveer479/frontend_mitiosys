@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../services/api';
 import {
     Factory,
@@ -38,6 +39,23 @@ const getPresetRange = (preset) => {
     };
 };
 
+const getMonthRange = (month, year) => {
+    const monthIndex = Number.parseInt(month, 10) - 1;
+    const resolvedYear = Number.parseInt(year, 10);
+
+    if (Number.isNaN(monthIndex) || Number.isNaN(resolvedYear) || monthIndex < 0 || monthIndex > 11) {
+        return null;
+    }
+
+    const startDate = new Date(resolvedYear, monthIndex, 1);
+    const endDate = new Date(resolvedYear, monthIndex + 1, 0);
+
+    return {
+        startDate: formatInputDate(startDate),
+        endDate: formatInputDate(endDate)
+    };
+};
+
 const buildLinePath = (points, width, height) => {
     if (!points.length) {
         return '';
@@ -68,6 +86,7 @@ const toneClasses = {
 };
 
 const Reports = () => {
+    const location = useLocation();
     const [preset, setPreset] = useState('30d');
     const [dateRange, setDateRange] = useState(() => getPresetRange('30d'));
     const [refreshKey, setRefreshKey] = useState(0);
@@ -80,6 +99,16 @@ const Reports = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
+    const isProductionRoute = location.pathname === '/reports/production';
+
+    const productionRouteFilters = useMemo(() => {
+        const params = new URLSearchParams(location.search);
+        return {
+            month: params.get('month') || '',
+            year: params.get('year') || '',
+            plant: params.get('plant') || ''
+        };
+    }, [location.search]);
 
     useEffect(() => {
         if (preset === 'custom') {
@@ -88,6 +117,20 @@ const Reports = () => {
 
         setDateRange(getPresetRange(preset));
     }, [preset]);
+
+    useEffect(() => {
+        if (!isProductionRoute) {
+            return;
+        }
+
+        const nextRange = getMonthRange(productionRouteFilters.month, productionRouteFilters.year);
+        if (!nextRange) {
+            return;
+        }
+
+        setPreset('custom');
+        setDateRange(nextRange);
+    }, [isProductionRoute, productionRouteFilters.month, productionRouteFilters.year]);
 
     useEffect(() => {
         let cancelled = false;
@@ -101,6 +144,10 @@ const Reports = () => {
                 startDate: dateRange.startDate,
                 endDate: dateRange.endDate
             };
+
+            if (isProductionRoute && productionRouteFilters.plant) {
+                params.plant = productionRouteFilters.plant;
+            }
 
             setError('');
             setRefreshing(!loading);
@@ -142,13 +189,29 @@ const Reports = () => {
         return () => {
             cancelled = true;
         };
-    }, [dateRange.startDate, dateRange.endDate, refreshKey]);
+    }, [dateRange.startDate, dateRange.endDate, isProductionRoute, productionRouteFilters.plant, refreshKey]);
 
     const productionSeries = dashboard.production?.series || [];
     const inventoryProducts = dashboard.inventory?.byProduct || [];
     const salesSeries = dashboard.sales?.series || [];
     const rejectionStages = dashboard.rejections?.byStage || [];
     const rejectionReasons = dashboard.rejections?.topReasons || [];
+    const productionRouteSummary = useMemo(() => {
+        if (!isProductionRoute) {
+            return null;
+        }
+
+        const monthIndex = Number.parseInt(productionRouteFilters.month, 10) - 1;
+        const monthLabel = monthIndex >= 0 && monthIndex < 12
+            ? new Date(Number.parseInt(productionRouteFilters.year || new Date().getFullYear(), 10), monthIndex, 1).toLocaleString('en-US', { month: 'long' })
+            : 'Selected Month';
+
+        return {
+            monthLabel,
+            yearLabel: productionRouteFilters.year || String(new Date().getFullYear()),
+            plantLabel: productionRouteFilters.plant || 'All Plants'
+        };
+    }, [isProductionRoute, productionRouteFilters.month, productionRouteFilters.plant, productionRouteFilters.year]);
 
     const overviewCards = useMemo(() => ([
         {
@@ -213,9 +276,11 @@ const Reports = () => {
                                     <span>Reports Dashboard</span>
                                 </div>
                                 <div>
-                                    <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Advanced operational reporting across production, stock, sales, and quality.</h1>
+                                    <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{isProductionRoute ? 'Detailed production reporting for monthly plant performance.' : 'Advanced operational reporting across production, stock, sales, and quality.'}</h1>
                                     <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-slate-300">
-                                        Monitor throughput, stock posture, commercial momentum, and rejection pressure from one live dashboard.
+                                        {isProductionRoute
+                                            ? 'Review output, active batches, rejection pressure, and recent production activity for the selected plant and reporting month.'
+                                            : 'Monitor throughput, stock posture, commercial momentum, and rejection pressure from one live dashboard.'}
                                     </p>
                                 </div>
                             </div>
@@ -226,13 +291,22 @@ const Reports = () => {
                                     <p className="mt-2 text-lg font-black">{dateRange.startDate} to {dateRange.endDate}</p>
                                 </div>
                                 <div className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Refresh State</p>
-                                    <p className="mt-2 text-lg font-black">{refreshing ? 'Refreshing' : 'Synced'}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">{isProductionRoute ? 'Plant Filter' : 'Refresh State'}</p>
+                                    <p className="mt-2 text-lg font-black">{isProductionRoute ? (productionRouteSummary?.plantLabel || 'All Plants') : (refreshing ? 'Refreshing' : 'Synced')}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </section>
+
+                {isProductionRoute && productionRouteSummary && (
+                    <section className="flex flex-wrap items-center gap-3 rounded-[1.5rem] border border-blue-200 bg-blue-50/80 px-5 py-4 text-sm font-bold text-slate-700 shadow-sm">
+                        <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-blue-600">Production Focus</span>
+                        <span>{productionRouteSummary.monthLabel} {productionRouteSummary.yearLabel}</span>
+                        <span className="text-slate-300">•</span>
+                        <span>{productionRouteSummary.plantLabel}</span>
+                    </section>
+                )}
 
                 <section className="flex flex-col gap-4 rounded-[1.75rem] border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur-sm lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-wrap items-center gap-3">
