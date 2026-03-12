@@ -41,7 +41,7 @@ const Suppliers = () => {
     const fetchSuppliers = async () => {
         try {
             const res = await api.get('/suppliers');
-            setSuppliers(res.data);
+            setSuppliers(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error(err);
         } finally {
@@ -116,7 +116,7 @@ const Suppliers = () => {
         }
     };
 
-    const filtered = suppliers.filter(s =>
+    const filtered = (Array.isArray(suppliers) ? suppliers : []).filter(s =>
         s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (s.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (s.phone || '').includes(searchTerm)

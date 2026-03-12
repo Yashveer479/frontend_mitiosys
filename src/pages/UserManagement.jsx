@@ -52,7 +52,7 @@ const UserManagement = () => {
         setLoading(true);
         try {
             const res = await api.get('/users');
-            setUsers(res.data);
+            setUsers(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error(err);
         } finally {

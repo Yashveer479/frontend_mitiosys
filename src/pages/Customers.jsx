@@ -49,7 +49,7 @@ const Customers = () => {
     const fetchCustomers = async () => {
         try {
             const res = await api.get('/customers');
-            setCustomers(res.data);
+            setCustomers(Array.isArray(res.data) ? res.data : []);
             setLoading(false);
         } catch (err) {
             console.error(err);

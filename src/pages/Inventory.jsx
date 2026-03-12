@@ -64,7 +64,7 @@ const Inventory = () => {
     const fetchData = async () => {
         try {
             const res = await api.get('/inventory');
-            setProducts(res.data);
+            setProducts(Array.isArray(res.data) ? res.data : []);
             setLoading(false);
         } catch (err) {
             console.error(err);
