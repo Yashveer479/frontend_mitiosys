@@ -25,9 +25,10 @@ const Header = () => {
 
     const fetchNotifications = React.useCallback(async () => {
         try {
-            const res = await api.get('/api/notifications');
-            setNotifications(res.data);
-            setUnreadCount(res.data.filter(n => !n.is_read).length);
+            const res = await api.get('/notifications');
+            const data = Array.isArray(res.data) ? res.data : [];
+            setNotifications(data);
+            setUnreadCount(data.filter(n => !n.is_read).length);
         } catch (_) {
             // silently fail — don't block UI
         }
