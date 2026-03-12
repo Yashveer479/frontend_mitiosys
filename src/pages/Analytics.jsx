@@ -38,19 +38,18 @@ const Analytics = () => {
                     api.get('/reports/summary')
                 ]);
 
-                setSalesReport(Array.isArray(salesRes.data) ? salesRes.data : []);
-                setInventoryReport(Array.isArray(invRes.data) ? invRes.data : []);
+                const salesData = salesRes.data || {};
+                const inventoryData = invRes.data || {};
+                const customerData = Array.isArray(custRes.data) ? custRes.data : [];
+
+                setSalesReport(Array.isArray(salesData.series) ? salesData.series : []);
+                setInventoryReport(Array.isArray(inventoryData.items) ? inventoryData.items : []);
                 setCustomerReport(Array.isArray(custRes.data) ? custRes.data : []);
 
-                // Process Summary
-                const safeSales = Array.isArray(salesRes.data) ? salesRes.data : [];
-                const totalRev = safeSales.reduce((sum, s) => sum + parseFloat(s.total), 0);
-                const totalCount = safeSales.reduce((sum, s) => sum + parseInt(s.count), 0);
-
                 setSummary({
-                    totalRevenue: totalRev,
-                    totalOrders: totalCount,
-                    avgOrderValue: totalCount > 0 ? (totalRev / totalCount).toFixed(0) : 0,
+                    totalRevenue: salesData.summary?.totalRevenue || 0,
+                    totalOrders: salesData.summary?.totalOrders || 0,
+                    avgOrderValue: salesData.summary?.averageOrderValue || 0,
                     stockTurnover: '4.2x' // Static for now
                 });
             } catch (err) {
@@ -71,13 +70,13 @@ const Analytics = () => {
     ];
 
     // Chart Data mapping
-    const salesDataPoints = salesReport.length > 0 ? salesReport.map(s => (parseFloat(s.total) / 1000000).toFixed(1)) : [0, 0, 0, 0, 0, 0];
+    const salesDataPoints = salesReport.length > 0 ? salesReport.map(s => (parseFloat(s.revenue || 0) / 1000000).toFixed(1)) : [0, 0, 0, 0, 0, 0];
 
     // Inventory Mix processing
     const categories = [...new Set(inventoryReport.map(i => i.category))];
     const categoryData = categories.map(cat => {
-        const total = inventoryReport.filter(i => i.category === cat).reduce((sum, i) => sum + i.stock, 0);
-        const grandTotal = inventoryReport.reduce((sum, i) => sum + i.stock, 0);
+        const total = inventoryReport.filter(i => i.category === cat).reduce((sum, i) => sum + (i.stockLevel || i.stock || 0), 0);
+        const grandTotal = inventoryReport.reduce((sum, i) => sum + (i.stockLevel || i.stock || 0), 0);
         return {
             name: cat,
             value: grandTotal > 0 ? Math.round((total / grandTotal) * 100) : 0,
@@ -254,7 +253,7 @@ const Analytics = () => {
                         <div className="mt-8 pt-8 border-t border-slate-100">
                             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Insights</h4>
                             <p className="text-xs font-medium text-slate-600 leading-relaxed">
-                                Analysis shows the current distribution across categories. Total items in stock: <span className="font-bold text-blue-600">{(inventoryReport || []).reduce((sum, i) => sum + (i.stock || 0), 0).toLocaleString()}</span> units.
+                                Analysis shows the current distribution across categories. Total items in stock: <span className="font-bold text-blue-600">{(inventoryReport || []).reduce((sum, i) => sum + (i.stockLevel || i.stock || 0), 0).toLocaleString()}</span> units.
                             </p>
                         </div>
                     </div>
