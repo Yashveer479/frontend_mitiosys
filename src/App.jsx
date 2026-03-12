@@ -34,6 +34,7 @@ import LaminationDepartment from './pages/LaminationDepartment';
 import WarehouseInventory from './pages/WarehouseInventory';
 import Suppliers from './pages/Suppliers';
 import PurchaseOrders from './pages/PurchaseOrders';
+import GoodsReceipt from './pages/GoodsReceipt';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import RoleGuard from './components/RoleGuard';
@@ -83,6 +84,7 @@ function App() {
                                     <Route path="/warehouse/inventory" element={<WarehouseInventory />} />
                                     <Route path="/inventory/suppliers" element={<Suppliers />} />
                                     <Route path="/inventory/purchase-orders" element={<PurchaseOrders />} />
+                                    <Route path="/inventory/goods-receipt" element={<GoodsReceipt />} />
                                                 </Routes>
                                             </div>
                                         </main>

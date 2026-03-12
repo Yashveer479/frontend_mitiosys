@@ -4,233 +4,234 @@ import {
     Save,
     Package,
     Calendar,
-    MapPin,
     FileText,
-    Hash,
     Layers,
     ChevronDown,
-    CheckCircle
+    CheckCircle,
+    AlertCircle,
+    ClipboardList
 } from 'lucide-react';
 
 const GoodsReceipt = () => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [error, setError] = useState('');
 
-    // Form State
+    const [purchaseOrders, setPurchaseOrders] = useState([]);
+    const [purchaseItems, setPurchaseItems] = useState([]);
+    const [recentGRNs, setRecentGRNs] = useState([]);
+
     const [formData, setFormData] = useState({
-        product: '',
-        quantity: '',
-        batchNumber: '',
-        productionDate: '',
-        warehouse: '',
-        remarks: ''
+        purchase_order_id: '',
+        purchase_item_id: '',
+        received_quantity: '',
+        received_date: new Date().toISOString().split('T')[0],
+        notes: ''
     });
 
-    // Mock Data for Dropdowns (In a real app, these would be fetched)
-    const [warehouses, setWarehouses] = useState([]);
-    const [products, setProducts] = useState([]);
-
     useEffect(() => {
-        // Fetch warehouses and mock products for the dropdowns
-        const fetchData = async () => {
+        const fetchInitialData = async () => {
             try {
-                const wRes = await api.get('/warehouses');
-                setWarehouses(wRes.data);
-
-                // Fetching inventory to get list of products, or ideally a /products endpoint
-                const pRes = await api.get('/inventory');
-                // Extract unique product names for the dropdown
-                const uniqueProducts = [...new Set(pRes.data.map(p => p.name))];
-                setProducts(uniqueProducts);
+                const [poRes, grnRes] = await Promise.all([
+                    api.get('/purchase-orders'),
+                    api.get('/goods-receipt')
+                ]);
+                setPurchaseOrders(poRes.data);
+                setRecentGRNs(grnRes.data.slice(0, 10));
             } catch (err) {
-                console.error("Failed to fetch form data sources", err);
+                console.error('Failed to fetch initial data', err);
             }
         };
-        fetchData();
+        fetchInitialData();
     }, []);
 
+    const handlePOChange = (e) => {
+        const poId = e.target.value;
+        const selectedPO = purchaseOrders.find(po => String(po.id) === String(poId));
+        setFormData(prev => ({ ...prev, purchase_order_id: poId, purchase_item_id: '' }));
+        setPurchaseItems(selectedPO?.items || []);
+    };
+
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            setLoading(false);
-            setSuccess(true);
-            setFormData({
-                product: '',
-                quantity: '',
-                batchNumber: '',
-                productionDate: '',
-                warehouse: '',
-                remarks: ''
+        setError('');
+        try {
+            await api.post('/goods-receipt', {
+                purchase_order_id: parseInt(formData.purchase_order_id, 10),
+                purchase_item_id: parseInt(formData.purchase_item_id, 10),
+                received_quantity: parseInt(formData.received_quantity, 10),
+                received_date: formData.received_date,
+                notes: formData.notes
             });
-            setTimeout(() => setSuccess(false), 3000);
-        }, 1500);
+            setSuccess(true);
+            // Refresh recent GRNs
+            const grnRes = await api.get('/goods-receipt');
+            setRecentGRNs(grnRes.data.slice(0, 10));
+            setFormData({
+                purchase_order_id: '',
+                purchase_item_id: '',
+                received_quantity: '',
+                received_date: new Date().toISOString().split('T')[0],
+                notes: ''
+            });
+            setPurchaseItems([]);
+            setTimeout(() => setSuccess(false), 4000);
+        } catch (err) {
+            setError(err.response?.data?.msg || 'Failed to create goods receipt. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-            <div className="max-w-2xl w-full space-y-8">
+        <div className="space-y-8">
+            {/* Header */}
+            <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Goods Receipt Note</h2>
+                <p className="mt-1 text-sm text-slate-500 font-medium uppercase tracking-wider">
+                    Record inbound stock from purchase orders
+                </p>
+            </div>
 
-                {/* Header */}
-                <div className="text-center">
-                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">Goods Receipt Note</h2>
-                    <p className="mt-2 text-sm text-slate-500 font-bold uppercase tracking-wider">
-                        Inbound Stock Entry & Verification
-                    </p>
-                </div>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                {/* Form */}
+                <div className="xl:col-span-2">
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative">
+                        {success && (
+                            <div className="absolute top-0 left-0 right-0 bg-emerald-500 text-white py-2 text-center text-xs font-black uppercase tracking-widest z-10">
+                                <span className="flex items-center justify-center space-x-2">
+                                    <CheckCircle size={14} />
+                                    <span>Goods Receipt Created — Inventory Updated</span>
+                                </span>
+                            </div>
+                        )}
 
-                {/* Main Form Card */}
-                <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative">
-                    {success && (
-                        <div className="absolute top-0 left-0 right-0 bg-emerald-500 text-white py-2 text-center text-xs font-black uppercase tracking-widest animate-fade-in-down">
-                            <span className="flex items-center justify-center space-x-2">
-                                <CheckCircle size={14} />
-                                <span>Stock Successfully Registered</span>
-                            </span>
-                        </div>
-                    )}
+                        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                            {error && (
+                                <div className="flex items-center space-x-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+                                    <AlertCircle size={16} className="shrink-0" />
+                                    <span>{error}</span>
+                                </div>
+                            )}
 
-                    <form onSubmit={handleSubmit} className="p-8 sm:p-10 space-y-8">
+                            {/* Purchase Order */}
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center space-x-1">
+                                    <FileText size={12} className="text-blue-500" />
+                                    <span>Purchase Order</span>
+                                </label>
+                                <div className="relative">
+                                    <select
+                                        name="purchase_order_id"
+                                        value={formData.purchase_order_id}
+                                        onChange={handlePOChange}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
+                                        required
+                                    >
+                                        <option value="">-- Select Purchase Order --</option>
+                                        {purchaseOrders.map(po => (
+                                            <option key={po.id} value={po.id}>
+                                                PO #{po.id} — {po.supplier?.name || 'Unknown Supplier'} ({po.status})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                </div>
+                            </div>
 
-                        {/* Section: Product Details */}
-                        <div className="space-y-6">
-                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 mb-4">
-                                Product Identification
-                            </h3>
+                            {/* Item */}
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center space-x-1">
+                                    <Package size={12} className="text-blue-500" />
+                                    <span>Item</span>
+                                </label>
+                                <div className="relative">
+                                    <select
+                                        name="purchase_item_id"
+                                        value={formData.purchase_item_id}
+                                        onChange={handleChange}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none disabled:opacity-50"
+                                        required
+                                        disabled={!formData.purchase_order_id}
+                                    >
+                                        <option value="">-- Select Item --</option>
+                                        {purchaseItems.map(item => (
+                                            <option key={item.id} value={item.id}>
+                                                {item.item_name} (Ordered: {item.quantity})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                </div>
+                                {!formData.purchase_order_id && (
+                                    <p className="text-[11px] text-slate-400 font-medium">Select a purchase order first</p>
+                                )}
+                            </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center space-x-1">
-                                        <Package size={12} className="text-blue-500" />
-                                        <span>Select Product</span>
-                                    </label>
-                                    <div className="relative">
-                                        <select
-                                            name="product"
-                                            value={formData.product}
-                                            onChange={handleChange}
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all appearance-none"
-                                            required
-                                        >
-                                            <option value="">-- Choose Item --</option>
-                                            {products.map((p, idx) => (
-                                                <option key={idx} value={p}>{p}</option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                    </div>
-                                </div>
-
+                                {/* Received Quantity */}
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center space-x-1">
                                         <Layers size={12} className="text-blue-500" />
-                                        <span>Quantity Received</span>
+                                        <span>Received Quantity</span>
                                     </label>
                                     <input
                                         type="number"
-                                        name="quantity"
-                                        value={formData.quantity}
+                                        name="received_quantity"
+                                        value={formData.received_quantity}
                                         onChange={handleChange}
-                                        placeholder="0.00"
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
-                                        required
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Section: Batch & Logistics */}
-                        <div className="space-y-6">
-                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 mb-4">
-                                Tracking & Location
-                            </h3>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center space-x-1">
-                                        <Hash size={12} className="text-blue-500" />
-                                        <span>Batch / Lot Number</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="batchNumber"
-                                        value={formData.batchNumber}
-                                        onChange={handleChange}
-                                        placeholder="e.g. BATCH-2026-X12"
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all uppercase"
+                                        min="1"
+                                        placeholder="0"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                         required
                                     />
                                 </div>
 
+                                {/* Received Date */}
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center space-x-1">
                                         <Calendar size={12} className="text-blue-500" />
-                                        <span>Production Date</span>
+                                        <span>Received Date</span>
                                     </label>
                                     <input
                                         type="date"
-                                        name="productionDate"
-                                        value={formData.productionDate}
+                                        name="received_date"
+                                        value={formData.received_date}
                                         onChange={handleChange}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                         required
                                     />
                                 </div>
-
-                                <div className="space-y-2 md:col-span-2">
-                                    <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center space-x-1">
-                                        <MapPin size={12} className="text-blue-500" />
-                                        <span>Target Warehouse</span>
-                                    </label>
-                                    <div className="relative">
-                                        <select
-                                            name="warehouse"
-                                            value={formData.warehouse}
-                                            onChange={handleChange}
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all appearance-none"
-                                            required
-                                        >
-                                            <option value="">-- Select Facility --</option>
-                                            {warehouses.map((w, idx) => (
-                                                <option key={idx} value={w.id}>{w.name} ({w.location})</option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                    </div>
-                                </div>
                             </div>
-                        </div>
 
-                        {/* Section: Remarks */}
-                        <div className="space-y-2">
-                            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center space-x-1">
-                                <FileText size={12} className="text-blue-500" />
-                                <span>Remarks / Quality Notes</span>
-                            </label>
-                            <textarea
-                                name="remarks"
-                                value={formData.remarks}
-                                onChange={handleChange}
-                                rows="3"
-                                placeholder="Enter any additional details regarding shipment condition or quality checks..."
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-none"
-                            ></textarea>
-                        </div>
+                            {/* Notes */}
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center space-x-1">
+                                    <FileText size={12} className="text-blue-500" />
+                                    <span>Notes (Optional)</span>
+                                </label>
+                                <textarea
+                                    name="notes"
+                                    value={formData.notes}
+                                    onChange={handleChange}
+                                    rows="3"
+                                    placeholder="Quality notes, condition on arrival, etc."
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+                                />
+                            </div>
 
-                        {/* Action Buttons */}
-                        <div className="pt-4">
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className={`w-full flex items-center justify-center space-x-2 bg-blue-600 text-white rounded-xl py-4 font-black uppercase tracking-widest text-xs hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20 active:scale-95 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                                className={`w-full flex items-center justify-center space-x-2 bg-blue-600 text-white rounded-xl py-4 font-black uppercase tracking-widest text-xs hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
                             >
                                 {loading ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-r-transparent"></div>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-r-transparent" />
                                 ) : (
                                     <>
                                         <Save size={16} />
@@ -238,8 +239,39 @@ const GoodsReceipt = () => {
                                     </>
                                 )}
                             </button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
+                </div>
+
+                {/* Recent GRNs Panel */}
+                <div className="xl:col-span-1">
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center space-x-2">
+                            <ClipboardList size={14} />
+                            <span>Recent Receipts</span>
+                        </h3>
+                        {recentGRNs.length === 0 ? (
+                            <p className="text-sm text-slate-400 text-center py-8">No receipts recorded yet</p>
+                        ) : (
+                            <div className="space-y-3">
+                                {recentGRNs.map(grn => (
+                                    <div key={grn.id} className="border border-slate-100 rounded-xl p-3 space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-slate-700">
+                                                {grn.purchaseItem?.item_name || `Item #${grn.purchase_item_id}`}
+                                            </span>
+                                            <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">
+                                                +{grn.received_quantity}
+                                            </span>
+                                        </div>
+                                        <div className="text-[10px] text-slate-400 font-medium">
+                                            PO #{grn.purchase_order_id} · {new Date(grn.received_date).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
