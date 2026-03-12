@@ -6,7 +6,7 @@ import {
     ClipboardCheck, Layers, Truck, ShoppingBag, ChevronDown,
     Factory, Box, History, SlidersHorizontal, FileText,
     Truck as TruckIcon, ClipboardList, ReceiptText, Boxes,
-    FlaskConical, Gauge, Zap
+    FlaskConical, Gauge, Zap, CalendarDays
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -23,6 +23,7 @@ const groups = [
         color: 'text-violet-400',
         paths: ['/production', '/warehouse/transfer', '/warehouse/lamination', '/lamination', '/warehouse/inventory'],
         items: [
+            { name: 'Planning', path: '/production/planning', icon: CalendarDays },
             { name: 'Raw Entry', path: '/production/raw-entry', icon: Boxes },
             { name: 'Thickness Processing', path: '/production/thickness', icon: Gauge },
             { name: 'Sanding Processing', path: '/production/sanding', icon: Zap },

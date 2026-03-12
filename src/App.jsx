@@ -37,6 +37,7 @@ import PurchaseOrders from './pages/PurchaseOrders';
 import GoodsReceipt from './pages/GoodsReceipt';
 import InventoryHistory from './pages/InventoryHistory';
 import StockAdjustment from './pages/StockAdjustment';
+import ProductionPlanning from './pages/ProductionPlanning';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import RoleGuard from './components/RoleGuard';
@@ -77,6 +78,7 @@ function App() {
                                                     <Route path="/change-password" element={<ChangePassword />} />
                                                     <Route path="/change-email" element={<ChangeEmail />} />
                                     <Route path="/production/raw-entry" element={<ProductionRawEntry />} />
+                                    <Route path="/production/planning" element={<ProductionPlanning />} />
                                     <Route path="/production/thickness" element={<ThicknessProcessing />} />
                                     <Route path="/production/sanding" element={<SandingProcessing />} />
                                     <Route path="/production/grading" element={<Grading />} />
