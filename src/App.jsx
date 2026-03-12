@@ -82,6 +82,7 @@ function App() {
                                                     <Route path="/change-email" element={<ChangeEmail />} />
                                     <Route path="/production/raw-entry" element={<ProductionRawEntry />} />
                                     <Route path="/production/planning" element={<ProductionPlanning />} />
+                                                    <Route path="/production/history" element={<ProductionPlanning />} />
                                     <Route path="/production/thickness" element={<ThicknessProcessing />} />
                                     <Route path="/production/sanding" element={<SandingProcessing />} />
                                     <Route path="/production/grading" element={<Grading />} />
