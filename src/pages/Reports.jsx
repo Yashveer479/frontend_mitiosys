@@ -28,7 +28,7 @@ const Reports = () => {
             const res = await api.get(`/reports/${reportType}`, {
                 params: { startDate, endDate }
             });
-            setData(res.data);
+            setData(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error("Failed to fetch report", err);
         } finally {

@@ -60,7 +60,7 @@ const PurchaseOrders = () => {
     const fetchSuppliers = async () => {
         try {
             const res = await api.get('/suppliers');
-            setSuppliers(res.data);
+            setSuppliers(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error(err);
         }

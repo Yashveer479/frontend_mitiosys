@@ -64,7 +64,7 @@ const UserManagement = () => {
         setLoading(true);
         try {
             const res = await api.get('/users/logs');
-            setLogs(res.data);
+            setLogs(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error(err);
         } finally {

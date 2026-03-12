@@ -42,7 +42,7 @@ const Profile = () => {
     const fetchActivity = useCallback(async () => {
         try {
             const res = await api.get('/users/activity');
-            setActivity(res.data);
+            setActivity(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error('Failed to load activity', err);
         } finally {
@@ -53,7 +53,7 @@ const Profile = () => {
     const fetchSessions = useCallback(async () => {
         try {
             const res = await api.get('/users/sessions');
-            setSessions(res.data);
+            setSessions(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error('Failed to load sessions', err);
         } finally {

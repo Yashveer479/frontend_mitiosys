@@ -37,8 +37,8 @@ const StockAudit = () => {
                 api.get('/products'),
                 api.get('/warehouses')
             ]);
-            setProducts(prodRes.data);
-            setWarehouses(wareRes.data);
+            setProducts(Array.isArray(prodRes.data) ? prodRes.data : []);
+            setWarehouses(Array.isArray(wareRes.data) ? wareRes.data : []);
         } catch (err) {
             console.error("Failed to fetch initial data", err);
         }
@@ -47,7 +47,7 @@ const StockAudit = () => {
     const fetchHistory = async () => {
         try {
             const res = await api.get('/inventory/audit/history');
-            setAuditHistory(res.data);
+            setAuditHistory(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error("Failed to fetch history", err);
         }
