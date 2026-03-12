@@ -36,6 +36,7 @@ import Suppliers from './pages/Suppliers';
 import PurchaseOrders from './pages/PurchaseOrders';
 import GoodsReceipt from './pages/GoodsReceipt';
 import InventoryHistory from './pages/InventoryHistory';
+import StockAdjustment from './pages/StockAdjustment';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import RoleGuard from './components/RoleGuard';
@@ -87,6 +88,7 @@ function App() {
                                     <Route path="/inventory/purchase-orders" element={<PurchaseOrders />} />
                                     <Route path="/inventory/goods-receipt" element={<GoodsReceipt />} />
                                     <Route path="/inventory/history" element={<InventoryHistory />} />
+                                    <Route path="/inventory/adjustment" element={<StockAdjustment />} />
                                                 </Routes>
                                             </div>
                                         </main>
