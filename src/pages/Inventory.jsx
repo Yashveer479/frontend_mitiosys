@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../services/api';
 import {
     Plus,
@@ -18,6 +19,7 @@ import {
 } from 'lucide-react';
 
 const Inventory = () => {
+    const location = useLocation();
     const [products, setProducts] = useState([]);
     const [warehouses, setWarehouses] = useState([]);
     const [availableProducts, setAvailableProducts] = useState([]); // For dropdown
@@ -43,6 +45,7 @@ const Inventory = () => {
     });
 
     const [refreshing, setRefreshing] = useState(false);
+    const isLowStockView = location.pathname === '/inventory/low-stock';
 
     useEffect(() => {
         fetchData();
@@ -145,7 +148,9 @@ const Inventory = () => {
         const matchesThickness = filters.thickness === 'All' || p.thickness === filters.thickness;
         const matchesFinish = filters.finish === 'All' || p.finish === filters.finish;
 
-        return matchesSearch && matchesWarehouse && matchesType && matchesThickness && matchesFinish;
+        const matchesLowStock = !isLowStockView || (p.quantity || 0) <= 300;
+
+        return matchesSearch && matchesWarehouse && matchesType && matchesThickness && matchesFinish && matchesLowStock;
     });
 
     const getStatusColor = (qty) => {
@@ -183,7 +188,7 @@ const Inventory = () => {
                         <nav className="flex items-center space-x-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                             <span>Supply Chain</span>
                             <span className="text-slate-300">•</span>
-                            <span className="text-blue-600">Stock Master</span>
+                            <span className="text-blue-600">{isLowStockView ? 'Low Stock Alerts' : 'Stock Master'}</span>
                         </nav>
                     </div>
                     <div className="flex items-center space-x-3">

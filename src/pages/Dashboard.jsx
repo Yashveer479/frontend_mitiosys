@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
     Package,
@@ -18,6 +19,7 @@ import {
 import mitioLogo from '../assets/logo.png';
 
 const Dashboard = () => {
+    const navigate = useNavigate();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -91,6 +93,7 @@ const Dashboard = () => {
                         trend="+4.2%"
                         isPositive={true}
                         gradient="from-blue-50/50"
+                        onClick={() => navigate('/inventory')}
                     />
                     <KPICard
                         title="Today's Sales"
@@ -100,6 +103,7 @@ const Dashboard = () => {
                         trend="Real-time"
                         isPositive={true}
                         gradient="from-indigo-50/50"
+                        onClick={() => navigate('/sales/orders')}
                     />
                     <KPICard
                         title="Pending Orders"
@@ -109,6 +113,7 @@ const Dashboard = () => {
                         trend="Active"
                         isPositive={false}
                         gradient="from-slate-50/50"
+                        onClick={() => navigate('/sales/pending')}
                     />
                     <KPICard
                         title="Low Stock Alerts"
@@ -118,6 +123,7 @@ const Dashboard = () => {
                         trend="Action Req"
                         isAlert={stats.pendingDeliveries > 0}
                         gradient="from-rose-50/50"
+                        onClick={() => navigate('/inventory/low-stock')}
                     />
                 </div>
 
@@ -236,8 +242,19 @@ const Dashboard = () => {
     );
 };
 
-const KPICard = ({ title, value, subtitle, icon: Icon, trend, isPositive, isAlert, gradient }) => (
-    <div className={`bg-white p-6 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 relative overflow-hidden group`}>
+const KPICard = ({ title, value, subtitle, icon: Icon, trend, isPositive, isAlert, gradient, onClick }) => (
+    <div
+        role="button"
+        tabIndex={0}
+        onClick={onClick}
+        onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onClick?.();
+            }
+        }}
+        className={`bg-white p-6 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 hover:scale-[1.01] relative overflow-hidden group cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-2`}
+    >
         <div className={`absolute inset-0 bg-gradient-to-br ${gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
         <div className="relative z-10">
             <div className="flex items-center justify-between mb-6">

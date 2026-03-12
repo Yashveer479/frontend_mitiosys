@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { ShoppingCart, Plus, Calendar, FileText, Download, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 
 const Orders = () => {
+    const location = useLocation();
     const navigate = useNavigate();
     const [orders, setOrders] = useState([]);
     const [expandedOrder, setExpandedOrder] = useState(null);
     const [generating, setGenerating] = useState(false);
+    const isPendingOrdersView = location.pathname === '/sales/pending';
 
     const fetchOrders = async () => {
         try {
@@ -21,6 +23,14 @@ const Orders = () => {
     useEffect(() => {
         fetchOrders();
     }, []);
+
+    const displayedOrders = orders.filter((order) => {
+        if (!isPendingOrdersView) {
+            return true;
+        }
+
+        return String(order.status || '').toLowerCase() !== 'completed';
+    });
 
     const handleGenerateDoc = async (orderId, type) => {
         setGenerating(type);
@@ -42,8 +52,8 @@ const Orders = () => {
         <div className="space-y-8 animate-in fade-in duration-700">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Sales & Logistics</h1>
-                    <p className="text-slate-500 text-sm">Commercial Lifecycle & Documentation</p>
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{isPendingOrdersView ? 'Pending Orders' : 'Sales & Logistics'}</h1>
+                    <p className="text-slate-500 text-sm">{isPendingOrdersView ? 'Orders awaiting fulfilment and follow-up' : 'Commercial Lifecycle & Documentation'}</p>
                 </div>
                 <button
                     onClick={() => navigate('/orders/new')}
@@ -55,7 +65,7 @@ const Orders = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-6">
-                {orders.map((order) => (
+                {displayedOrders.map((order) => (
                     <div
                         key={order.id}
                         className={`bg-white rounded-lg border transition-all duration-300 ${expandedOrder === order.id ? 'border-primary/30 shadow-md ring-2 ring-primary/5' : 'border-slate-200 shadow-sm hover:border-slate-300'
@@ -173,12 +183,12 @@ const Orders = () => {
                         )}
                     </div>
                 ))}
-                {orders.length === 0 && (
+                {displayedOrders.length === 0 && (
                     <div className="bg-white rounded-lg border border-slate-200 p-20 text-center shadow-sm">
                         <div className="inline-flex p-6 bg-slate-50 text-slate-200 rounded-lg mb-4">
                             <ShoppingCart size={40} />
                         </div>
-                        <p className="text-slate-400 font-bold uppercase tracking-wider text-xs">No active orders found</p>
+                        <p className="text-slate-400 font-bold uppercase tracking-wider text-xs">{isPendingOrdersView ? 'No pending orders found' : 'No active orders found'}</p>
                     </div>
                 )}
             </div>
