@@ -15,7 +15,7 @@ const ProductionRawEntry = () => {
             setLoading(true);
             setError(null);
             const res = await api.get('/production/batches');
-            setBatches(res.data);
+            setBatches(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             setError('Failed to load batches');
         } finally {
@@ -38,7 +38,7 @@ const ProductionRawEntry = () => {
                 thickness: thickness !== '' ? parseFloat(thickness) : null
             };
             const res = await api.post('/production/batch', payload);
-            setBatches(prev => [res.data, ...prev]);
+            setBatches(prev => (Array.isArray(prev) ? [res.data, ...prev] : [res.data]));
             setBatchNumber('');
             setRawQuantity('');
             setThickness('');
