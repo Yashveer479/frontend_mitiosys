@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, LogOut, ArrowRightLeft, Warehouse, Shield, Settings as SettingsIcon, ClipboardCheck, Layers, Truck } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, LogOut, ArrowRightLeft, Warehouse, Shield, Settings as SettingsIcon, ClipboardCheck, Layers, Truck, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
@@ -19,6 +19,7 @@ const Sidebar = () => {
         { name: 'Inventory', path: '/inventory', icon: Package },
         { name: 'Stock Audit', path: '/inventory/audit', icon: ClipboardCheck },
         { name: 'Suppliers', path: '/inventory/suppliers', icon: Truck },
+        { name: 'Purchase Orders', path: '/inventory/purchase-orders', icon: ShoppingBag },
         { name: 'Settings', path: '/settings', icon: SettingsIcon },
         { name: 'Logistics STO', path: '/logistics', icon: ArrowRightLeft },
         { name: 'Warehouses', path: '/warehouses', icon: Warehouse },
