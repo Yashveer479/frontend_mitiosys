@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
@@ -38,16 +38,47 @@ const Dashboard = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const maxIndustrialOutput = Math.max(...INDUSTRIAL_PERFORMANCE_DATA.map((item) => item.productionOutput), 1);
+    const [industrialView, setIndustrialView] = useState('monthly');
+
+    const annualIndustrialData = useMemo(() => {
+        const grouped = INDUSTRIAL_PERFORMANCE_DATA.reduce((accumulator, item) => {
+            const key = `${item.year}-${item.plant}`;
+            const current = accumulator.get(key) || {
+                label: String(item.year),
+                year: item.year,
+                plant: item.plant,
+                productionOutput: 0,
+                marketAbsorption: 0,
+                samples: 0,
+            };
+
+            current.productionOutput += item.productionOutput;
+            current.marketAbsorption += item.marketAbsorption;
+            current.samples += 1;
+            accumulator.set(key, current);
+            return accumulator;
+        }, new Map());
+
+        return Array.from(grouped.values()).map((item) => ({
+            ...item,
+            efficiency: item.productionOutput > 0 ? (item.marketAbsorption / item.productionOutput) * 100 : 0,
+        }));
+    }, []);
+
+    const activeIndustrialData = industrialView === 'annual' ? annualIndustrialData : INDUSTRIAL_PERFORMANCE_DATA;
+    const maxIndustrialOutput = Math.max(...activeIndustrialData.map((item) => item.productionOutput), 1);
 
     const handleIndustrialBarClick = (item) => {
-        const search = new URLSearchParams({
-            month: String(item.month),
+        const params = new URLSearchParams({
             year: String(item.year),
             plant: item.plant,
-        }).toString();
+        });
 
-        navigate(`/reports/production?${search}`);
+        if (industrialView === 'monthly' && item.month) {
+            params.set('month', String(item.month));
+        }
+
+        navigate(`/reports/production?${params.toString()}`);
     };
 
     useEffect(() => {
@@ -167,32 +198,44 @@ const Dashboard = () => {
                                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Output vs Market Absorption</p>
                                 </div>
                                 <div className="flex bg-slate-50 p-1 rounded-lg">
-                                    <button className="px-3 py-1.5 text-[10px] font-bold bg-white shadow-sm rounded-md text-slate-900 tracking-wider">MONTHLY</button>
-                                    <button className="px-3 py-1.5 text-[10px] font-bold text-slate-400 tracking-wider hover:text-slate-600 transition-colors">ANNUAL</button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIndustrialView('monthly')}
+                                        className={`px-3 py-1.5 text-[10px] font-bold rounded-md tracking-wider transition-colors ${industrialView === 'monthly' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+                                    >
+                                        MONTHLY
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIndustrialView('annual')}
+                                        className={`px-3 py-1.5 text-[10px] font-bold rounded-md tracking-wider transition-colors ${industrialView === 'annual' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+                                    >
+                                        ANNUAL
+                                    </button>
                                 </div>
                             </div>
 
                             <div className="mb-5 flex items-center justify-between gap-4 rounded-2xl bg-slate-50 px-4 py-3">
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Interactive Report Drilldown</p>
-                                    <p className="mt-1 text-xs font-bold text-slate-600">Click any month to open the filtered production report.</p>
+                                    <p className="mt-1 text-xs font-bold text-slate-600">Click any {industrialView === 'annual' ? 'year' : 'month'} to open the filtered production report.</p>
                                 </div>
                                 <div className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 shadow-sm">
-                                    Plant: SITE-A
+                                    View: {industrialView}
                                 </div>
                             </div>
 
                             <div className="h-72 flex items-end justify-between space-x-4 pb-4">
-                                {INDUSTRIAL_PERFORMANCE_DATA.map((item) => (
+                                {activeIndustrialData.map((item) => (
                                     <button
-                                        key={`${item.year}-${item.month}`}
+                                        key={`${item.year}-${item.month || 'annual'}-${item.plant}`}
                                         type="button"
                                         onClick={() => handleIndustrialBarClick(item)}
                                         className="flex-1 flex flex-col items-center group/bar relative h-full justify-end cursor-pointer focus:outline-none"
-                                        aria-label={`Open production report for ${item.label} ${item.year} at ${item.plant}`}
+                                        aria-label={`Open production report for ${item.label} at ${item.plant}`}
                                     >
                                         <div className="absolute -top-24 left-1/2 z-10 hidden w-44 -translate-x-1/2 rounded-xl bg-slate-950 px-3 py-2 text-left text-white shadow-2xl group-hover/bar:block group-focus/bar:block">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">{item.label} {item.year}</p>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">{item.label}{industrialView === 'monthly' ? ` ${item.year}` : ''}</p>
                                             <p className="mt-2 text-[11px] font-bold text-slate-100">Production output: {item.productionOutput.toLocaleString()} units</p>
                                             <p className="mt-1 text-[11px] font-bold text-slate-200">Market absorption: {item.marketAbsorption.toLocaleString()} units</p>
                                             <p className="mt-1 text-[11px] font-bold text-emerald-300">Efficiency: {item.efficiency.toFixed(1)}%</p>

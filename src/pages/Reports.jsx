@@ -56,6 +56,19 @@ const getMonthRange = (month, year) => {
     };
 };
 
+const getYearRange = (year) => {
+    const resolvedYear = Number.parseInt(year, 10);
+
+    if (Number.isNaN(resolvedYear)) {
+        return null;
+    }
+
+    return {
+        startDate: formatInputDate(new Date(resolvedYear, 0, 1)),
+        endDate: formatInputDate(new Date(resolvedYear, 11, 31))
+    };
+};
+
 const buildLinePath = (points, width, height) => {
     if (!points.length) {
         return '';
@@ -123,7 +136,10 @@ const Reports = () => {
             return;
         }
 
-        const nextRange = getMonthRange(productionRouteFilters.month, productionRouteFilters.year);
+        const nextRange = productionRouteFilters.month
+            ? getMonthRange(productionRouteFilters.month, productionRouteFilters.year)
+            : getYearRange(productionRouteFilters.year);
+
         if (!nextRange) {
             return;
         }
@@ -204,7 +220,7 @@ const Reports = () => {
         const monthIndex = Number.parseInt(productionRouteFilters.month, 10) - 1;
         const monthLabel = monthIndex >= 0 && monthIndex < 12
             ? new Date(Number.parseInt(productionRouteFilters.year || new Date().getFullYear(), 10), monthIndex, 1).toLocaleString('en-US', { month: 'long' })
-            : 'Selected Month';
+            : 'Full Year';
 
         return {
             monthLabel,
