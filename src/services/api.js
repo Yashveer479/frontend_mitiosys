@@ -18,4 +18,21 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+// If the session/token is invalid, force a clean re-login flow.
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        const status = error?.response?.status;
+        if (status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('sessionId');
+
+            if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;
