@@ -1,62 +1,50 @@
 export const config = {
-    runtime: 'edge',
+    runtime: 'nodejs',
 };
 
+const HOP_BY_HOP_HEADERS = new Set([
+    'connection',
+    'keep-alive',
+    'proxy-authenticate',
+    'proxy-authorization',
+    'te',
+    'trailer',
+    'transfer-encoding',
+    'upgrade',
+    'content-length',
+    'host'
+]);
+
+const TARGET_BASE = (process.env.BACKEND_API_URL || 'http://13-205-230-226.sslip.io:5000/api').replace(/\/+$/, '');
+
 export default async function handler(req: Request) {
-    // Vercel Edge Runtime doesn't allow direct IP fetch. Use sslip.io to map IP to a hostname.
-    const TARGET_BASE = 'http://13-205-230-226.sslip.io:5000/api';
     const incomingUrl = new URL(req.url);
+    const path = incomingUrl.pathname.replace(/^\/api\/?/, '');
+    const targetUrl = path
+        ? `${TARGET_BASE}/${path}${incomingUrl.search}`
+        : `${TARGET_BASE}${incomingUrl.search}`;
 
-    // Extract path accurately
-    const pathParts = incomingUrl.pathname.split('/').filter(Boolean);
-    const apiIndex = pathParts.indexOf('api');
-    const path = apiIndex !== -1 ? pathParts.slice(apiIndex + 1).join('/') : '';
-
-    const search = incomingUrl.search;
-    const url = path ? `${TARGET_BASE}/${path}${search}` : `${TARGET_BASE}${search}`;
-
-    const incomingHeaders = new Headers(req.headers);
     const headers = new Headers();
-
-    // Whitelist approach: Only forward essential headers
-    // Do not forward browser origin/referer to avoid backend CORS rejection in proxy mode.
-    const whitelist = ['content-type', 'authorization', 'accept', 'user-agent', 'cookie', 'x-auth-token', 'accept-encoding'];
-    for (const [key, value] of incomingHeaders.entries()) {
-        const lowerKey = key.toLowerCase();
-        if (whitelist.includes(lowerKey) || (lowerKey.startsWith('x-') && lowerKey !== 'x-forwarded-host' && lowerKey !== 'x-forwarded-proto')) {
+    for (const [key, value] of req.headers.entries()) {
+        if (!HOP_BY_HOP_HEADERS.has(key.toLowerCase())) {
             headers.set(key, value);
         }
     }
 
-    // Explicitly set the host header to the target backend (without the hostname mapping for Host header)
-    // The target host is 13.205.230.226:5000 via its sslip.io mapping.
-    headers.set('host', '13.205.230.226:5000');
-
-    // Do NOT set Origin manually, as the backend's CORS policy is strict and rejects the sslip.io hostname.
-    // By not sending an Origin, the backend's CORS middleware (configured with a whitelist) 
-    // will usually allow the request (confirmed via curl diagnostics).
-
     try {
-        const resp = await fetch(url, {
+        const body = req.method === 'GET' || req.method === 'HEAD'
+            ? undefined
+            : await req.arrayBuffer();
+
+        const resp = await fetch(targetUrl, {
             method: req.method,
             headers,
-            body: req.method === 'GET' || req.method === 'HEAD' ? undefined : req.body,
-            // @ts-ignore - duplex is required for streaming bodies in Edge fetch
-            duplex: 'half'
+            body
         });
 
-        // Forward headers from backend, but ensure we don't leak backend server info
         const responseHeaders = new Headers();
-        const restrictedHeaders = [
-            'connection',
-            'keep-alive',
-            'transfer-encoding',
-            'content-encoding',
-            'content-length' // Let Vercel calculate this
-        ];
-
         for (const [key, value] of resp.headers.entries()) {
-            if (!restrictedHeaders.includes(key.toLowerCase())) {
+            if (!HOP_BY_HOP_HEADERS.has(key.toLowerCase())) {
                 responseHeaders.set(key, value);
             }
         }
@@ -65,16 +53,15 @@ export default async function handler(req: Request) {
             status: resp.status,
             headers: responseHeaders,
         });
-
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.stack || error.message : String(error);
+        const details = error instanceof Error ? (error.stack || error.message) : String(error);
         return new Response(JSON.stringify({
-            error: 'Proxy Critical Failure',
-            details: errorMessage,
-            targetUrl: url
+            error: 'Proxy Failure',
+            details,
+            targetUrl
         }), {
-            status: 502, // Bad Gateway
-            headers: { 'content-type': 'application/json' },
+            status: 502,
+            headers: { 'content-type': 'application/json' }
         });
     }
 }

@@ -1,42 +1,50 @@
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 };
 
+const HOP_BY_HOP_HEADERS = new Set([
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade',
+  'content-length',
+  'host'
+]);
+
+const TARGET_BASE = (process.env.BACKEND_API_URL || 'http://13-205-230-226.sslip.io:5000/api').replace(/\/+$/, '');
+
 export default async function handler(req: Request) {
-  const TARGET_BASE = 'http://13.205.230.226:5000/api';
   const incomingUrl = new URL(req.url);
   const path = incomingUrl.pathname.replace(/^\/api\/?/, '');
-  const search = incomingUrl.search;
-  const url = path ? `${TARGET_BASE}/${path}${search}` : `${TARGET_BASE}${search}`;
+  const targetUrl = path
+    ? `${TARGET_BASE}/${path}${incomingUrl.search}`
+    : `${TARGET_BASE}${incomingUrl.search}`;
 
-  const incomingHeaders = new Headers(req.headers);
   const headers = new Headers();
-
-  // Do not forward browser origin/referer to avoid backend CORS rejection in proxy mode.
-  const whitelist = ['content-type', 'authorization', 'accept', 'user-agent', 'cookie', 'x-auth-token', 'accept-encoding'];
-  for (const [key, value] of incomingHeaders.entries()) {
-    const lowerKey = key.toLowerCase();
-    if (whitelist.includes(lowerKey) || (lowerKey.startsWith('x-') && lowerKey !== 'x-forwarded-host' && lowerKey !== 'x-forwarded-proto')) {
+  for (const [key, value] of req.headers.entries()) {
+    if (!HOP_BY_HOP_HEADERS.has(key.toLowerCase())) {
       headers.set(key, value);
     }
   }
 
-  headers.set('host', '13.205.230.226:5000');
-
   try {
-    const resp = await fetch(url, {
+    const body = req.method === 'GET' || req.method === 'HEAD'
+      ? undefined
+      : await req.arrayBuffer();
+
+    const resp = await fetch(targetUrl, {
       method: req.method,
       headers,
-      body: req.method === 'GET' || req.method === 'HEAD' ? undefined : req.body,
-      // @ts-ignore - duplex is required for streaming bodies in Edge fetch
-      duplex: 'half'
+      body
     });
 
     const responseHeaders = new Headers();
-    const restrictedHeaders = ['connection', 'keep-alive', 'transfer-encoding', 'content-encoding', 'content-length'];
-
     for (const [key, value] of resp.headers.entries()) {
-      if (!restrictedHeaders.includes(key.toLowerCase())) {
+      if (!HOP_BY_HOP_HEADERS.has(key.toLowerCase())) {
         responseHeaders.set(key, value);
       }
     }
@@ -46,7 +54,8 @@ export default async function handler(req: Request) {
       headers: responseHeaders,
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Proxy Failure', details: String(error) }), {
+    const details = error instanceof Error ? (error.stack || error.message) : String(error);
+    return new Response(JSON.stringify({ error: 'Proxy Failure', details, targetUrl }), {
       status: 502,
       headers: { 'content-type': 'application/json' },
     });
