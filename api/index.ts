@@ -19,12 +19,12 @@ const TARGET_BASE = (process.env.BACKEND_API_URL || 'http://13-205-230-226.sslip
 
 export default async function handler(req: Request) {
     const incomingUrl = new URL(req.url);
-    const forwardedPath = (incomingUrl.searchParams.get('path') || '').trim();
+    const forwardedPath = (incomingUrl.searchParams.get('__path') || '').trim();
     const path = forwardedPath || incomingUrl.pathname.replace(/^\/api\/?/, '');
 
     // Remove internal rewrite helper param before forwarding to backend.
     if (forwardedPath) {
-        incomingUrl.searchParams.delete('path');
+        incomingUrl.searchParams.delete('__path');
     }
 
     const downstreamSearch = incomingUrl.search;
