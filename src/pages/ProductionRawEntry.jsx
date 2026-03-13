@@ -1,6 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 
+const normalizeBatch = (input) => {
+    const source = input && typeof input.batch === 'object' ? input.batch : input;
+    if (!source || typeof source !== 'object') {
+        return null;
+    }
+
+    return {
+        ...source,
+        id: source.id,
+        batch_number: source.batch_number ?? source.batchNumber ?? '',
+        raw_quantity: source.raw_quantity ?? source.rawQuantity ?? null,
+        thickness: source.thickness ?? source.thickness_mm ?? source.thicknessMm ?? null,
+        status: source.status ?? source.stage ?? 'RAW',
+        created_at: source.created_at ?? source.createdAt ?? source.created ?? null
+    };
+};
+
+const formatDateTime = (value) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString();
+};
+
 const ProductionRawEntry = () => {
     const [batchNumber, setBatchNumber] = useState('');
     const [rawQuantity, setRawQuantity] = useState('');
@@ -15,7 +38,10 @@ const ProductionRawEntry = () => {
             setLoading(true);
             setError(null);
             const res = await api.get('/production/batches');
-            setBatches(Array.isArray(res.data) ? res.data : []);
+            const normalized = Array.isArray(res.data)
+                ? res.data.map(normalizeBatch).filter(Boolean)
+                : [];
+            setBatches(normalized);
         } catch (err) {
             setError('Failed to load batches');
         } finally {
@@ -38,7 +64,12 @@ const ProductionRawEntry = () => {
                 thickness: thickness !== '' ? parseFloat(thickness) : null
             };
             const res = await api.post('/production/batch', payload);
-            setBatches(prev => (Array.isArray(prev) ? [res.data, ...prev] : [res.data]));
+            const createdBatch = normalizeBatch(res.data);
+            if (createdBatch) {
+                setBatches(prev => (Array.isArray(prev) ? [createdBatch, ...prev] : [createdBatch]));
+            } else {
+                await fetchBatches();
+            }
             setBatchNumber('');
             setRawQuantity('');
             setThickness('');
@@ -143,7 +174,7 @@ const ProductionRawEntry = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {batches.map(b => (
-                                    <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                                    <tr key={b.id ?? `${b.batch_number}-${b.created_at ?? 'no-date'}`} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-3 font-medium text-slate-800">{b.batch_number}</td>
                                         <td className="px-6 py-3 text-right text-slate-600">{b.raw_quantity}</td>
                                         <td className="px-6 py-3 text-right text-slate-600">
@@ -155,7 +186,7 @@ const ProductionRawEntry = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-3 text-slate-500">
-                                            {new Date(b.created_at).toLocaleString()}
+                                            {formatDateTime(b.created_at)}
                                         </td>
                                     </tr>
                                 ))}
