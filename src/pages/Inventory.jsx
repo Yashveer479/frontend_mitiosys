@@ -17,8 +17,8 @@ import {
     RefreshCw
 } from 'lucide-react';
 
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Inventory = () => {
     const [products, setProducts] = useState([]);
@@ -113,7 +113,7 @@ const Inventory = () => {
 
             console.log("Generating inventory table...");
 
-            doc.autoTable({
+            autoTable(doc, {
                 head: [headers],
                 body: rows,
                 startY: 40,

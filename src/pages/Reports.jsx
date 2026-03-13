@@ -15,8 +15,8 @@ import {
     Loader2
 } from 'lucide-react';
 
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Reports = () => {
     const location = useLocation();
@@ -111,7 +111,7 @@ const Reports = () => {
 
             console.log("Generating table with headers:", headers);
 
-            doc.autoTable({
+            autoTable(doc, {
                 head: [headers],
                 body: rows,
                 startY: 45,

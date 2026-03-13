@@ -14,8 +14,8 @@ import {
     Loader2
 } from 'lucide-react';
 
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Analytics = () => {
     const [dateRange, setDateRange] = useState('Last 30 Days');
@@ -79,7 +79,7 @@ const Analytics = () => {
 
             // Summary Stats
             console.log("Generating summary table...");
-            doc.autoTable({
+            autoTable(doc, {
                 head: [["METRIC", "VALUE"]],
                 body: [
                     ["Total Revenue", `UGX ${(summary?.totalRevenue || 0).toLocaleString()}`],
@@ -95,15 +95,16 @@ const Analytics = () => {
             // Top Customers
             if (customerReport && customerReport.length > 0) {
                 console.log("Generating top customers table...");
-                doc.text("Top Performing Customers", 14, doc.autoTable.previous.finalY + 15);
-                doc.autoTable({
+                const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 80; // Fallback Y if tracking fails
+                doc.text("Top Performing Customers", 14, finalY + 15);
+                autoTable(doc, {
                     head: [["CUSTOMER", "ORDERS", "TOTAL SPEND"]],
                     body: customerReport.slice(0, 5).map(c => [
                         c.customer || 'N/A',
                         c.orderCount || 0,
                         `UGX ${(c.totalValue || 0).toLocaleString()}`
                     ]),
-                    startY: doc.autoTable.previous.finalY + 20,
+                    startY: finalY + 20,
                     theme: 'striped'
                 });
             }
