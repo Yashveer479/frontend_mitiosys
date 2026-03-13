@@ -19,10 +19,18 @@ const TARGET_BASE = (process.env.BACKEND_API_URL || 'http://13-205-230-226.sslip
 
 export default async function handler(req: Request) {
     const incomingUrl = new URL(req.url);
-    const path = incomingUrl.pathname.replace(/^\/api\/?/, '');
-    const targetUrl = path
-        ? `${TARGET_BASE}/${path}${incomingUrl.search}`
-        : `${TARGET_BASE}${incomingUrl.search}`;
+    const forwardedPath = (incomingUrl.searchParams.get('path') || '').trim();
+    const path = forwardedPath || incomingUrl.pathname.replace(/^\/api\/?/, '');
+
+    // Remove internal rewrite helper param before forwarding to backend.
+    if (forwardedPath) {
+        incomingUrl.searchParams.delete('path');
+    }
+
+    const downstreamSearch = incomingUrl.search;
+    const downstreamUrl = path
+        ? `${TARGET_BASE}/${path}${downstreamSearch}`
+        : `${TARGET_BASE}${downstreamSearch}`;
 
     const headers = new Headers();
     for (const [key, value] of req.headers.entries()) {
@@ -36,7 +44,7 @@ export default async function handler(req: Request) {
             ? undefined
             : await req.arrayBuffer();
 
-        const resp = await fetch(targetUrl, {
+        const resp = await fetch(downstreamUrl, {
             method: req.method,
             headers,
             body
@@ -58,7 +66,7 @@ export default async function handler(req: Request) {
         return new Response(JSON.stringify({
             error: 'Proxy Failure',
             details,
-            targetUrl
+            targetUrl: downstreamUrl
         }), {
             status: 502,
             headers: { 'content-type': 'application/json' }
