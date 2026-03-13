@@ -28,7 +28,7 @@ const Grading = () => {
             setLoading(true);
             setError(null);
             const res = await api.get('/production/batches');
-            const sandingBatches = res.data.filter(b => b.status === 'SANDING_PROCESSED');
+            const sandingBatches = (Array.isArray(res.data) ? res.data : []).filter(b => b.status === 'SANDING_PROCESSED');
             setBatches(sandingBatches);
 
             // Fetch latest sanding record for each batch to get output quantity

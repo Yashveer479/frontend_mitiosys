@@ -18,7 +18,7 @@ const SandingProcessing = () => {
             setLoading(true);
             setError(null);
             const res = await api.get('/production/batches');
-            const thicknessBatches = res.data.filter(b => b.status === 'THICKNESS_PROCESSED');
+            const thicknessBatches = (Array.isArray(res.data) ? res.data : []).filter(b => b.status === 'THICKNESS_PROCESSED');
             setBatches(thicknessBatches);
 
             // Fetch latest thickness record for each batch to get input quantity

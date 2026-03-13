@@ -18,7 +18,7 @@ const ThicknessProcessing = () => {
             setError(null);
             const res = await api.get('/production/batches');
             // Only show RAW batches for processing
-            setBatches(res.data.filter(b => b.status === 'RAW'));
+            setBatches((Array.isArray(res.data) ? res.data : []).filter(b => b.status === 'RAW'));
         } catch (err) {
             setError('Failed to load batches');
         } finally {
