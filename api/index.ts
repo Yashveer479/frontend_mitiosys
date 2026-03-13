@@ -1,5 +1,5 @@
 export const config = {
-    runtime: 'nodejs',
+    runtime: 'edge',
 };
 
 const HOP_BY_HOP_HEADERS = new Set([
