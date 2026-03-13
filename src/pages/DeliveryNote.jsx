@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import api from '../services/api';
 import {
     Truck,
@@ -39,10 +41,22 @@ const DeliveryNote = () => {
         }, 800);
     }, []);
 
-    const handleRelease = () => {
-        setReleased(true);
-        // Logic to update inventory would go here
-        setTimeout(() => setReleased(false), 3000);
+    const handleDownloadPDF = async () => {
+        const element = document.getElementById('delivery-note-doc');
+        if (!element) return;
+
+        try {
+            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`delivery_note_${deliveryData.dispatchNumber}.pdf`);
+        } catch (err) {
+            console.error("Failed to generate PDF", err);
+            alert("Failed to generate PDF. Please try again.");
+        }
     };
 
     if (!deliveryData) {
@@ -67,6 +81,13 @@ const DeliveryNote = () => {
                         <Printer size={14} />
                         <span>Print</span>
                     </button>
+                    <button 
+                        onClick={handleDownloadPDF}
+                        className="flex items-center space-x-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-slate-50 transition-colors shadow-sm"
+                    >
+                        <Download size={14} />
+                        <span>Download PDF</span>
+                    </button>
                     {released ? (
                         <div className="bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide shadow-lg flex items-center animate-fade-in">
                             <CheckCircle size={14} className="mr-2" />
@@ -85,7 +106,7 @@ const DeliveryNote = () => {
             </div>
 
             {/* A4 Document Container */}
-            <div className="max-w-[210mm] mx-auto bg-white shadow-2xl shadow-slate-300/50 min-h-[297mm] p-12 sm:p-16 relative flex flex-col justify-between">
+            <div id="delivery-note-doc" className="max-w-[210mm] mx-auto bg-white shadow-2xl shadow-slate-300/50 min-h-[297mm] p-12 sm:p-16 relative flex flex-col justify-between">
 
                 <div>
                     {/* Header */}

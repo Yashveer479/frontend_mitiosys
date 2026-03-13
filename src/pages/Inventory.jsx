@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import api from '../services/api';
 import {
     Plus,
@@ -148,6 +150,43 @@ const Inventory = () => {
         return matchesSearch && matchesWarehouse && matchesType && matchesThickness && matchesFinish;
     });
 
+    const handleExport = () => {
+        if (filteredProducts.length === 0) return;
+
+        const doc = new jsPDF();
+        doc.setFontSize(20);
+        doc.setTextColor(15, 23, 42); // slate-900
+        doc.text("Inventory Status Report", 14, 22);
+
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+
+        const headers = [["PRODUCT", "SKU", "TYPE", "SPECIFICATIONS", "WAREHOUSE", "BATCH", "QUANTITY"]];
+        const body = filteredProducts.map(p => [
+            p.name,
+            (p._id || p.sku || '').toString().slice(-6).toUpperCase(),
+            p.type,
+            `${p.thickness} - ${p.finish}`,
+            p.warehouse?.name || 'Unassigned',
+            p.batchNumber || '-',
+            (p.quantity || 0).toLocaleString()
+        ]);
+
+        autoTable(doc, {
+            startY: 40,
+            head: headers,
+            body: body,
+            theme: 'striped',
+            headStyles: { fillColor: [15, 23, 42], textColor: 255, fontSize: 8, fontStyle: 'bold' },
+            bodyStyles: { fontSize: 8 },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            margin: { top: 40 },
+        });
+
+        doc.save(`inventory_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    };
+
     const getStatusColor = (qty) => {
         if (qty > 300) return 'bg-emerald-50 text-emerald-600 border-emerald-100';
         if (qty >= 100) return 'bg-amber-50 text-amber-600 border-amber-100';
@@ -195,7 +234,10 @@ const Inventory = () => {
                         >
                             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
                         </button>
-                        <button className="flex items-center space-x-2 bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-95">
+                        <button 
+                            onClick={handleExport}
+                            className="flex items-center space-x-2 bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+                        >
                             <Download size={14} />
                             <span>Export Data</span>
                         </button>

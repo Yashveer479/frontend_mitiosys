@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import api from '../services/api';
 import {
     BarChart3,
@@ -90,6 +92,58 @@ const Analytics = () => {
         volume: `${c.orderCount || 0} orders`
     }));
 
+    const handleExport = () => {
+        const doc = new jsPDF();
+        doc.setFontSize(22);
+        doc.setTextColor(15, 23, 42); // slate-900
+        doc.text("Business Analytics Report", 14, 22);
+
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+        doc.text(`Period: ${dateRange}`, 14, 35);
+
+        // Section 1: KPI Summary
+        doc.setFontSize(14);
+        doc.setTextColor(15, 23, 42);
+        doc.text("Key Performance Indicators", 14, 48);
+        
+        const kpiHeaders = [["METRIC", "VALUE", "CHANGE"]];
+        const kpiBody = kpis.map(k => [k.label, k.value, k.change]);
+        
+        autoTable(doc, {
+            startY: 52,
+            head: kpiHeaders,
+            body: kpiBody,
+            theme: 'grid',
+            headStyles: { fillColor: [15, 23, 42], textColor: 255 },
+            margin: { left: 14 }
+        });
+
+        // Section 2: Top Performing Customers
+        doc.setFontSize(14);
+        doc.text("Top Performing Customers", 14, doc.lastAutoTable.finalY + 15);
+        
+        const custHeaders = [["RANK", "CUSTOMER", "TOTAL VALUE", "ORDERS"]];
+        const custBody = customerReport.slice(0, 10).map((c, i) => [
+            `#${i+1}`,
+            c.customer,
+            `UGX ${((c.totalValue || 0) / 1000).toLocaleString()}K`,
+            c.orderCount || 0
+        ]);
+
+        autoTable(doc, {
+            startY: doc.lastAutoTable.finalY + 19,
+            head: custHeaders,
+            body: custBody,
+            theme: 'striped',
+            headStyles: { fillColor: [15, 23, 42], textColor: 255 },
+            margin: { left: 14 }
+        });
+
+        doc.save(`analytics_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    };
+
     return (
         <div className="min-h-screen bg-[#F8FAFC] pb-20 p-6 relative">
             {loading && (
@@ -126,7 +180,10 @@ const Analytics = () => {
                             </select>
                             <Calendar size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                         </div>
-                        <button className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20 active:scale-95">
+                        <button 
+                            onClick={handleExport}
+                            className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20 active:scale-95"
+                        >
                             <Download size={14} />
                             <span>Export Report</span>
                         </button>

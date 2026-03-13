@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import api from '../services/api';
 import {
     FileText,
@@ -43,20 +45,39 @@ const Reports = () => {
     const handleExport = () => {
         if (data.length === 0) return;
 
-        // Simple CSV Export
-        const headers = Object.keys(data[0]);
-        const csvRows = [
-            headers.join(','),
-            ...data.map(row => headers.map(header => JSON.stringify(row[header] || '')).join(','))
-        ];
-        const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `${reportType}_report_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const doc = new jsPDF();
+        
+        // Add title and metadata
+        doc.setFontSize(20);
+        doc.setTextColor(15, 23, 42); // slate-900
+        doc.text(`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`, 14, 22);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+        
+        if (startDate || endDate) {
+            doc.text(`Period: ${startDate || 'Start'} to ${endDate || 'Today'}`, 14, 35);
+        }
+
+        // Prepare table data
+        const headers = Object.keys(data[0]).map(h => h.replace(/([A-Z])/g, ' $1').trim().toUpperCase());
+        const body = filteredData.map(row => Object.values(row).map(val => 
+            typeof val === 'number' && val > 1000 ? (val || 0).toLocaleString() : String(val || '')
+        ));
+
+        autoTable(doc, {
+            startY: 40,
+            head: [headers],
+            body: body,
+            theme: 'striped',
+            headStyles: { fillColor: [15, 23, 42], textColor: 255, fontSize: 8, fontStyle: 'bold' },
+            bodyStyles: { fontSize: 8 },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            margin: { top: 40 },
+        });
+
+        doc.save(`${reportType}_report_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     // Filter data based on search
