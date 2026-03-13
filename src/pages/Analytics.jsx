@@ -41,13 +41,14 @@ const Analytics = () => {
                     api.get('/reports/summary')
                 ]);
 
-                setSalesReport(Array.isArray(salesRes.data) ? salesRes.data : []);
-                setInventoryReport(Array.isArray(invRes.data) ? invRes.data : []);
-                setCustomerReport(Array.isArray(custRes.data) ? custRes.data : []);
+                setSalesReport(Array.isArray(salesRes.data) ? salesRes.data : (salesRes.data.series || []));
+                setInventoryReport(Array.isArray(invRes.data) ? invRes.data : (invRes.data.items || []));
+                setCustomerReport(Array.isArray(custRes.data) ? custRes.data : (custRes.data.recent || []));
 
                 // Process Summary
-                const totalRev = salesRes.data.reduce((sum, s) => sum + parseFloat(s.total || 0), 0);
-                const totalCount = salesRes.data.reduce((sum, s) => sum + parseInt(s.count || 0), 0);
+                const salesData = Array.isArray(salesRes.data) ? salesRes.data : (salesRes.data.series || []);
+                const totalRev = salesData.reduce((sum, s) => sum + parseFloat(s.revenue || s.total || 0), 0);
+                const totalCount = salesData.reduce((sum, s) => sum + parseInt(s.orders || s.count || 0), 0);
 
                 setSummary({
                     totalRevenue: totalRev,

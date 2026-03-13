@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../services/api';
 import {
     FileText,
@@ -18,12 +19,21 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 const Reports = () => {
+    const location = useLocation();
     const [reportType, setReportType] = useState('sales');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [data, setData] = useState([]);
+    const [reportResponse, setReportResponse] = useState(null);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+
+    useEffect(() => {
+        const path = location.pathname.split('/').pop();
+        if (['sales', 'inventory', 'customers', 'production', 'rejections'].includes(path)) {
+            setReportType(path);
+        }
+    }, [location]);
 
     const fetchReport = async () => {
         setLoading(true);
@@ -31,9 +41,25 @@ const Reports = () => {
             const res = await api.get(`/reports/${reportType}`, {
                 params: { startDate, endDate }
             });
-            setData(res.data);
+            
+            setReportResponse(res.data);
+            
+            if (Array.isArray(res.data)) {
+                setData(res.data);
+            } else if (res.data.recentOrders) {
+                setData(res.data.recentOrders);
+            } else if (res.data.items) {
+                setData(res.data.items);
+            } else if (res.data.recent) {
+                setData(res.data.recent);
+            } else if (res.data.series) {
+                setData(res.data.series);
+            } else {
+                setData([]);
+            }
         } catch (err) {
             console.error("Failed to fetch report", err);
+            setData([]);
         } finally {
             setLoading(false);
         }
@@ -109,6 +135,8 @@ const Reports = () => {
                             >
                                 <option value="sales">Sales Report</option>
                                 <option value="inventory">Inventory Report</option>
+                                <option value="production">Production Report</option>
+                                <option value="rejections">Rejections Analysis</option>
                                 <option value="customers">Customer Report</option>
                             </select>
                             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -155,6 +183,8 @@ const Reports = () => {
                             <div className="p-2 bg-slate-50 rounded-lg">
                                 {reportType === 'sales' && <TrendingUp size={18} className="text-blue-500" />}
                                 {reportType === 'inventory' && <Package size={18} className="text-emerald-500" />}
+                                {reportType === 'production' && <TrendingUp size={18} className="text-orange-500" />}
+                                {reportType === 'rejections' && <FileText size={18} className="text-rose-500" />}
                                 {reportType === 'customers' && <Users size={18} className="text-indigo-500" />}
                             </div>
                             <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">

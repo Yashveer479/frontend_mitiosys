@@ -33,18 +33,20 @@ const Orders = () => {
     });
 
     const handleGenerateDoc = async (orderId, type) => {
-        setGenerating(type);
-        try {
-            const res = await api.get(`/documents/${type}/${orderId}`);
-            // In a real app, this might open a PDF or show a preview
-            // For now, we'll show success
+        const typeMap = {
+            'Proforma Invoice': 'proforma-invoice',
+            'Tax Invoice': 'tax-invoice',
+            'Delivery Note': 'delivery-note'
+        };
+
+        if (typeMap[type]) {
+            navigate(`/documents/${typeMap[type]}/${orderId}`);
+        } else {
+            setGenerating(type);
             setTimeout(() => {
-                alert(`${type} generated successfully: ${res.data.id}`);
+                alert(`${type} generation initiated for Order #${orderId}`);
                 setGenerating(false);
             }, 1000);
-        } catch (err) {
-            console.error(err);
-            setGenerating(false);
         }
     };
 

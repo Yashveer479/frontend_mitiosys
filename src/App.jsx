@@ -23,6 +23,9 @@ import ForgotPassword from './pages/ForgotPassword';
 import Reports from './pages/Reports';
 import Analytics from './pages/Analytics';
 import Dispatch from './pages/Dispatch';
+import TaxInvoice from './pages/TaxInvoice';
+import ProformaInvoice from './pages/ProformaInvoice';
+import DeliveryNote from './pages/DeliveryNote';
 import StockAudit from './pages/StockAudit';
 import ProductionRawEntry from './pages/ProductionRawEntry';
 import ThicknessProcessing from './pages/ThicknessProcessing';
@@ -96,6 +99,9 @@ function App() {
                                                     <Route path="/analytics" element={<Analytics />} />
                                                     <Route path="/reports" element={<RoleGuard roles={['admin', 'manager']}><Reports /></RoleGuard>} />
                                                     <Route path="/reports/production" element={<RoleGuard roles={['admin', 'manager']}><Reports /></RoleGuard>} />
+                                                    <Route path="/documents/tax-invoice/:id" element={<TaxInvoice />} />
+                                                    <Route path="/documents/proforma-invoice/:id" element={<ProformaInvoice />} />
+                                                    <Route path="/documents/delivery-note/:id" element={<DeliveryNote />} />
                                                     <Route path="/system/status" element={systemPortal} />
                                                     <Route path="/system-status" element={systemPortal} />
                                                     <Route
