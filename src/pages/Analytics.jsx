@@ -127,7 +127,10 @@ const Analytics = () => {
     ];
 
     // Chart Data mapping
-    const salesDataPoints = salesReport.length > 0 ? salesReport.map(s => (parseFloat(s.total) / 1000000).toFixed(1)) : [0, 0, 0, 0, 0, 0];
+    const salesDataPoints = salesReport.length > 0 ? salesReport.map(s => {
+        const val = parseFloat(s.revenue || s.total || 0);
+        return isNaN(val) ? 0 : (val / 1000000).toFixed(1);
+    }) : [0, 0, 0, 0, 0, 0];
 
     // Inventory Mix processing
     const categories = [...new Set(inventoryReport.map(i => i.category))];
