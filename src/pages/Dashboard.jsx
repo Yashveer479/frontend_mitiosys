@@ -94,7 +94,7 @@ const Dashboard = () => {
                     />
                     <KPICard
                         title="Today's Sales"
-                        value={`UDX ${(stats?.monthlyRevenue || 0).toLocaleString()}`}
+                        value={`UGX ${(stats?.monthlyRevenue || 0).toLocaleString()}`}
                         subtitle="Daily Revenue"
                         icon={BarChart3}
                         trend="Real-time"
