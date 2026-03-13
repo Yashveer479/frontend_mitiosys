@@ -4,7 +4,6 @@ import { API_BASE_URL } from './urlConfig';
 const api = axios.create({
     baseURL: API_BASE_URL,
     timeout: 15000,
-    withCredentials: true  // Include cookies/auth in cross-domain requests
 });
 
 // Add a request interceptor to add the auth token to headers
