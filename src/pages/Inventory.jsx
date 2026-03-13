@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import api from '../services/api';
 import {
     Plus,
@@ -18,8 +17,10 @@ import {
     RefreshCw
 } from 'lucide-react';
 
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
 const Inventory = () => {
-    const location = useLocation();
     const [products, setProducts] = useState([]);
     const [warehouses, setWarehouses] = useState([]);
     const [availableProducts, setAvailableProducts] = useState([]); // For dropdown
@@ -45,9 +46,6 @@ const Inventory = () => {
     });
 
     const [refreshing, setRefreshing] = useState(false);
-    const isLowStockView = location.pathname === '/inventory/low-stock';
-    const isRestockView = location.pathname === '/inventory/restock';
-    const isAddStockView = location.pathname === '/inventory/add-stock';
 
     useEffect(() => {
         fetchData();
@@ -66,12 +64,6 @@ const Inventory = () => {
         };
     }, []);
 
-    useEffect(() => {
-        if (isAddStockView) {
-            setIsModalOpen(true);
-        }
-    }, [isAddStockView]);
-
     const fetchData = async () => {
         try {
             const res = await api.get('/inventory');
@@ -89,12 +81,49 @@ const Inventory = () => {
         setRefreshing(false);
     };
 
+    const handleExport = () => {
+        if (products.length === 0) return;
+
+        const doc = new jsPDF();
+        const title = "Inventory Master Report";
+        const dateStr = new Date().toISOString().split('T')[0];
+
+        doc.setFontSize(18);
+        doc.text(title, 14, 22);
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`Generated on: ${dateStr}`, 14, 30);
+
+        const headers = ["NAME", "SKU", "TYPE", "THICKNESS", "FINISH", "WAREHOUSE", "BATCH", "QUANTITY"];
+        const rows = products.map(p => [
+            p.name || '-',
+            (p._id || p.sku || '-').toString().slice(-6).toUpperCase(),
+            p.type || '-',
+            p.thickness || '-',
+            p.finish || '-',
+            p.warehouse?.name || 'Unassigned',
+            p.batchNumber || '-',
+            (p.quantity || 0).toLocaleString()
+        ]);
+
+        doc.autoTable({
+            head: [headers],
+            body: rows,
+            startY: 40,
+            theme: 'striped',
+            headStyles: { fillColor: [51, 65, 85], textColor: 255 },
+            styles: { fontSize: 8, cellPadding: 2 }
+        });
+
+        doc.save(`inventory_report_${dateStr}.pdf`);
+    };
+
     const fetchAuxData = async () => {
         try {
             const wRes = await api.get('/warehouses');
-            setWarehouses(wRes.data);
+            setWarehouses(Array.isArray(wRes.data) ? wRes.data : []);
             const pRes = await api.get('/products');
-            setAvailableProducts(pRes.data);
+            setAvailableProducts(Array.isArray(pRes.data) ? pRes.data : []);
         } catch (err) {
             console.error("Failed to fetch aux data", err);
         }
@@ -156,9 +185,7 @@ const Inventory = () => {
         const matchesThickness = filters.thickness === 'All' || p.thickness === filters.thickness;
         const matchesFinish = filters.finish === 'All' || p.finish === filters.finish;
 
-        const matchesLowStock = !isLowStockView || (p.quantity || 0) <= 300;
-
-        return matchesSearch && matchesWarehouse && matchesType && matchesThickness && matchesFinish && matchesLowStock;
+        return matchesSearch && matchesWarehouse && matchesType && matchesThickness && matchesFinish;
     });
 
     const getStatusColor = (qty) => {
@@ -196,7 +223,7 @@ const Inventory = () => {
                         <nav className="flex items-center space-x-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                             <span>Supply Chain</span>
                             <span className="text-slate-300">•</span>
-                            <span className="text-blue-600">{isLowStockView ? 'Low Stock Alerts' : isRestockView ? 'Restock Command Center' : isAddStockView ? 'Stock Intake' : 'Stock Master'}</span>
+                            <span className="text-blue-600">Stock Master</span>
                         </nav>
                     </div>
                     <div className="flex items-center space-x-3">
@@ -208,7 +235,10 @@ const Inventory = () => {
                         >
                             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
                         </button>
-                        <button className="flex items-center space-x-2 bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-95">
+                        <button 
+                            onClick={handleExport}
+                            className="flex items-center space-x-2 bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+                        >
                             <Download size={14} />
                             <span>Export Data</span>
                         </button>

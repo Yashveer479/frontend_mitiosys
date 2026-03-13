@@ -10,11 +10,14 @@ import {
     Package,
     FileText
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import mitioLogo from '../assets/logo.png';
 
 const DeliveryNote = () => {
     const [deliveryData, setDeliveryData] = useState(null);
     const [released, setReleased] = useState(false);
+    const documentRef = React.useRef();
 
     useEffect(() => {
         // Simulate fetching delivery data
@@ -38,6 +41,24 @@ const DeliveryNote = () => {
             });
         }, 800);
     }, []);
+
+    const handleDownloadPDF = async () => {
+        if (!documentRef.current) return;
+        
+        const canvas = await html2canvas(documentRef.current, {
+            scale: 2,
+            useCORS: true,
+            logging: false
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Delivery_Note_${deliveryData.dispatchNumber}.pdf`);
+    };
 
     const handleRelease = () => {
         setReleased(true);
@@ -67,6 +88,13 @@ const DeliveryNote = () => {
                         <Printer size={14} />
                         <span>Print</span>
                     </button>
+                    <button 
+                        onClick={handleDownloadPDF}
+                        className="flex items-center space-x-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-slate-50 transition-colors shadow-sm"
+                    >
+                        <Download size={14} />
+                        <span>Download PDF</span>
+                    </button>
                     {released ? (
                         <div className="bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide shadow-lg flex items-center animate-fade-in">
                             <CheckCircle size={14} className="mr-2" />
@@ -85,7 +113,7 @@ const DeliveryNote = () => {
             </div>
 
             {/* A4 Document Container */}
-            <div className="max-w-[210mm] mx-auto bg-white shadow-2xl shadow-slate-300/50 min-h-[297mm] p-12 sm:p-16 relative flex flex-col justify-between">
+            <div ref={documentRef} className="max-w-[210mm] mx-auto bg-white shadow-2xl shadow-slate-300/50 min-h-[297mm] p-12 sm:p-16 relative flex flex-col justify-between">
 
                 <div>
                     {/* Header */}

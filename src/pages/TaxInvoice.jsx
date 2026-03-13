@@ -11,10 +11,13 @@ import {
     Phone,
     Globe
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import mitioLogo from '../assets/logo.png';
 
 const TaxInvoice = () => {
     const [invoiceData, setInvoiceData] = useState(null);
+    const documentRef = React.useRef();
 
     useEffect(() => {
         // Simulate fetching draft/final tax invoice data
@@ -45,6 +48,24 @@ const TaxInvoice = () => {
         }, 800);
     }, []);
 
+    const handleDownloadPDF = async () => {
+        if (!documentRef.current) return;
+        
+        const canvas = await html2canvas(documentRef.current, {
+            scale: 2,
+            useCORS: true,
+            logging: false
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Tax_Invoice_${invoiceData.invoiceNumber}.pdf`);
+    };
+
     if (!invoiceData) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-[#F1F5F9]">
@@ -71,7 +92,10 @@ const TaxInvoice = () => {
                         <Printer size={14} />
                         <span>Print</span>
                     </button>
-                    <button className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10">
+                    <button 
+                        onClick={handleDownloadPDF}
+                        className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10"
+                    >
                         <Download size={14} />
                         <span>Download PDF</span>
                     </button>
@@ -79,7 +103,7 @@ const TaxInvoice = () => {
             </div>
 
             {/* A4 Document Container */}
-            <div className="max-w-[210mm] mx-auto bg-white shadow-2xl shadow-slate-300/50 min-h-[297mm] p-12 sm:p-16 relative flex flex-col justify-between">
+            <div ref={documentRef} className="max-w-[210mm] mx-auto bg-white shadow-2xl shadow-slate-300/50 min-h-[297mm] p-12 sm:p-16 relative flex flex-col justify-between">
 
                 {/* Top Section */}
                 <div>
@@ -140,7 +164,7 @@ const TaxInvoice = () => {
                                     <td className="py-4 px-4 text-sm font-bold text-slate-600 text-right">{item.quantity}</td>
                                     <td className="py-4 px-4 text-sm font-bold text-slate-600 text-right">{item.unitPrice.toLocaleString()}</td>
                                     <td className="py-4 px-4 text-sm font-black text-slate-900 text-right">{(item.quantity * item.unitPrice).toLocaleString()}</td>
-                                </div>
+                                </tr>
                             ))}
                         </tbody>
                     </table>

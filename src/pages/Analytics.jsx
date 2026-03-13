@@ -14,6 +14,9 @@ import {
     Loader2
 } from 'lucide-react';
 
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
 const Analytics = () => {
     const [dateRange, setDateRange] = useState('Last 30 Days');
     const [loading, setLoading] = useState(true);
@@ -38,18 +41,18 @@ const Analytics = () => {
                     api.get('/reports/summary')
                 ]);
 
-                const salesData = salesRes.data || {};
-                const inventoryData = invRes.data || {};
-                const customerData = Array.isArray(custRes.data) ? custRes.data : [];
-
-                setSalesReport(Array.isArray(salesData.series) ? salesData.series : []);
-                setInventoryReport(Array.isArray(inventoryData.items) ? inventoryData.items : []);
+                setSalesReport(Array.isArray(salesRes.data) ? salesRes.data : []);
+                setInventoryReport(Array.isArray(invRes.data) ? invRes.data : []);
                 setCustomerReport(Array.isArray(custRes.data) ? custRes.data : []);
 
+                // Process Summary
+                const totalRev = salesRes.data.reduce((sum, s) => sum + parseFloat(s.total || 0), 0);
+                const totalCount = salesRes.data.reduce((sum, s) => sum + parseInt(s.count || 0), 0);
+
                 setSummary({
-                    totalRevenue: salesData.summary?.totalRevenue || 0,
-                    totalOrders: salesData.summary?.totalOrders || 0,
-                    avgOrderValue: salesData.summary?.averageOrderValue || 0,
+                    totalRevenue: totalRev,
+                    totalOrders: totalCount,
+                    avgOrderValue: totalCount > 0 ? (totalRev / totalCount).toFixed(0) : 0,
                     stockTurnover: '4.2x' // Static for now
                 });
             } catch (err) {
@@ -61,6 +64,48 @@ const Analytics = () => {
         fetchData();
     }, []);
 
+    const handleExport = () => {
+        const doc = new jsPDF();
+        const dateStr = new Date().toISOString().split('T')[0];
+        
+        doc.setFontSize(18);
+        doc.text("Business Analytics Executive Summary", 14, 22);
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`Range: ${dateRange} | Generated: ${dateStr}`, 14, 30);
+
+        // Summary Stats
+        doc.autoTable({
+            head: [["METRIC", "VALUE"]],
+            body: [
+                ["Total Revenue", `UGX ${summary.totalRevenue.toLocaleString()}`],
+                ["Total Orders", summary.totalOrders.toLocaleString()],
+                ["Average Order Value", `UGX ${parseFloat(summary.avgOrderValue).toLocaleString()}`],
+                ["Stock Turnover", summary.stockTurnover]
+            ],
+            startY: 40,
+            theme: 'grid',
+            headStyles: { fillColor: [51, 65, 85] }
+        });
+
+        // Top Customers
+        if (customerReport.length > 0) {
+            doc.text("Top Performing Customers", 14, doc.autoTable.previous.finalY + 15);
+            doc.autoTable({
+                head: [["CUSTOMER", "ORDERS", "TOTAL SPEND"]],
+                body: customerReport.slice(0, 5).map(c => [
+                    c.customer,
+                    c.orderCount,
+                    `UGX ${(c.totalValue || 0).toLocaleString()}`
+                ]),
+                startY: doc.autoTable.previous.finalY + 20,
+                theme: 'striped'
+            });
+        }
+
+        doc.save(`analytics_report_${dateStr}.pdf`);
+    };
+
     // Derived KPI Data
     const kpis = [
         { label: 'Total Revenue', value: `UGX ${((summary?.totalRevenue || 0) / 1000000).toFixed(1)}M`, change: '+12.5%', trend: 'up', icon: DollarSign, color: 'blue' },
@@ -70,13 +115,13 @@ const Analytics = () => {
     ];
 
     // Chart Data mapping
-    const salesDataPoints = salesReport.length > 0 ? salesReport.map(s => (parseFloat(s.revenue || 0) / 1000000).toFixed(1)) : [0, 0, 0, 0, 0, 0];
+    const salesDataPoints = salesReport.length > 0 ? salesReport.map(s => (parseFloat(s.total) / 1000000).toFixed(1)) : [0, 0, 0, 0, 0, 0];
 
     // Inventory Mix processing
     const categories = [...new Set(inventoryReport.map(i => i.category))];
     const categoryData = categories.map(cat => {
-        const total = inventoryReport.filter(i => i.category === cat).reduce((sum, i) => sum + (i.stockLevel || i.stock || 0), 0);
-        const grandTotal = inventoryReport.reduce((sum, i) => sum + (i.stockLevel || i.stock || 0), 0);
+        const total = inventoryReport.filter(i => i.category === cat).reduce((sum, i) => sum + (i.stockLevel || 0), 0);
+        const grandTotal = inventoryReport.reduce((sum, i) => sum + (i.stockLevel || 0), 0);
         return {
             name: cat,
             value: grandTotal > 0 ? Math.round((total / grandTotal) * 100) : 0,
@@ -85,9 +130,9 @@ const Analytics = () => {
     }).filter(c => c.value > 0);
 
     const topProductsReport = customerReport.slice(0, 4).map(c => ({
-        name: c.name,
-        sales: `UGX ${(c.totalSpend / 1000000).toFixed(1)}M`,
-        volume: `${c.orders} orders`
+        name: c.customer,
+        sales: `UGX ${((c.totalValue || 0) / 1000000).toFixed(1)}M`,
+        volume: `${c.orderCount || 0} orders`
     }));
 
     return (
@@ -126,7 +171,10 @@ const Analytics = () => {
                             </select>
                             <Calendar size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                         </div>
-                        <button className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20 active:scale-95">
+                        <button 
+                            onClick={handleExport}
+                            className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20 active:scale-95"
+                        >
                             <Download size={14} />
                             <span>Export Report</span>
                         </button>
@@ -253,7 +301,7 @@ const Analytics = () => {
                         <div className="mt-8 pt-8 border-t border-slate-100">
                             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Insights</h4>
                             <p className="text-xs font-medium text-slate-600 leading-relaxed">
-                                Analysis shows the current distribution across categories. Total items in stock: <span className="font-bold text-blue-600">{(inventoryReport || []).reduce((sum, i) => sum + (i.stockLevel || i.stock || 0), 0).toLocaleString()}</span> units.
+                                Analysis shows the current distribution across categories. Total items in stock: <span className="font-bold text-blue-600">{(inventoryReport || []).reduce((sum, i) => sum + (i.stockLevel || 0), 0).toLocaleString()}</span> units.
                             </p>
                         </div>
                     </div>
@@ -286,9 +334,9 @@ const Analytics = () => {
                                 {customerReport.slice(0, 5).map((customer, index) => (
                                     <tr key={index} className="group hover:bg-slate-50/50 transition-colors">
                                         <td className="py-4 text-xs font-black text-slate-300 group-hover:text-blue-500">#{index + 1}</td>
-                                        <td className="py-4 text-sm font-bold text-slate-700">{customer.name}</td>
-                                        <td className="py-4 text-sm font-bold text-slate-600 text-right">{customer.orders}</td>
-                                        <td className="py-4 text-sm font-black text-slate-900 text-right">UGX {((customer.totalSpend || 0) / 1000).toLocaleString()}K</td>
+                                        <td className="py-4 text-sm font-bold text-slate-700">{customer.customer}</td>
+                                        <td className="py-4 text-sm font-bold text-slate-600 text-right">{customer.orderCount || 0}</td>
+                                        <td className="py-4 text-sm font-black text-slate-900 text-right">UGX {((customer.totalValue || 0) / 1000).toLocaleString()}K</td>
                                         <td className="py-4 text-right">
                                             <div className="inline-flex items-center space-x-1 text-emerald-500 bg-emerald-50 px-2 py-1 rounded text-[10px] font-bold uppercase">
                                                 <TrendingUp size={12} />
