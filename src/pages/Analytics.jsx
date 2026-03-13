@@ -66,45 +66,55 @@ const Analytics = () => {
     }, []);
 
     const handleExport = () => {
-        const doc = new jsPDF();
-        const dateStr = new Date().toISOString().split('T')[0];
-        
-        doc.setFontSize(18);
-        doc.text("Business Analytics Executive Summary", 14, 22);
-        doc.setFontSize(11);
-        doc.setTextColor(100);
-        doc.text(`Range: ${dateRange} | Generated: ${dateStr}`, 14, 30);
+        console.log("Analytics Export initiated. Summary:", summary, "Customers:", customerReport);
+        try {
+            const doc = new jsPDF();
+            const dateStr = new Date().toISOString().split('T')[0];
+            
+            doc.setFontSize(18);
+            doc.text("Business Analytics Executive Summary", 14, 22);
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(`Range: ${dateRange} | Generated: ${dateStr}`, 14, 30);
 
-        // Summary Stats
-        doc.autoTable({
-            head: [["METRIC", "VALUE"]],
-            body: [
-                ["Total Revenue", `UGX ${summary.totalRevenue.toLocaleString()}`],
-                ["Total Orders", summary.totalOrders.toLocaleString()],
-                ["Average Order Value", `UGX ${parseFloat(summary.avgOrderValue).toLocaleString()}`],
-                ["Stock Turnover", summary.stockTurnover]
-            ],
-            startY: 40,
-            theme: 'grid',
-            headStyles: { fillColor: [51, 65, 85] }
-        });
-
-        // Top Customers
-        if (customerReport.length > 0) {
-            doc.text("Top Performing Customers", 14, doc.autoTable.previous.finalY + 15);
+            // Summary Stats
+            console.log("Generating summary table...");
             doc.autoTable({
-                head: [["CUSTOMER", "ORDERS", "TOTAL SPEND"]],
-                body: customerReport.slice(0, 5).map(c => [
-                    c.customer,
-                    c.orderCount,
-                    `UGX ${(c.totalValue || 0).toLocaleString()}`
-                ]),
-                startY: doc.autoTable.previous.finalY + 20,
-                theme: 'striped'
+                head: [["METRIC", "VALUE"]],
+                body: [
+                    ["Total Revenue", `UGX ${(summary?.totalRevenue || 0).toLocaleString()}`],
+                    ["Total Orders", (summary?.totalOrders || 0).toLocaleString()],
+                    ["Average Order Value", `UGX ${parseFloat(summary?.avgOrderValue || 0).toLocaleString()}`],
+                    ["Stock Turnover", summary?.stockTurnover || '0x']
+                ],
+                startY: 40,
+                theme: 'grid',
+                headStyles: { fillColor: [51, 65, 85] }
             });
-        }
 
-        doc.save(`analytics_report_${dateStr}.pdf`);
+            // Top Customers
+            if (customerReport && customerReport.length > 0) {
+                console.log("Generating top customers table...");
+                doc.text("Top Performing Customers", 14, doc.autoTable.previous.finalY + 15);
+                doc.autoTable({
+                    head: [["CUSTOMER", "ORDERS", "TOTAL SPEND"]],
+                    body: customerReport.slice(0, 5).map(c => [
+                        c.customer || 'N/A',
+                        c.orderCount || 0,
+                        `UGX ${(c.totalValue || 0).toLocaleString()}`
+                    ]),
+                    startY: doc.autoTable.previous.finalY + 20,
+                    theme: 'striped'
+                });
+            }
+
+            console.log("Saving Analytics PDF...");
+            doc.save(`analytics_report_${dateStr}.pdf`);
+            console.log("Analytics PDF saved successfully.");
+        } catch (error) {
+            console.error("Error exporting analytics PDF:", error);
+            alert("Failed to export Analytics PDF. Check console for details.");
+        }
     };
 
     // Derived KPI Data

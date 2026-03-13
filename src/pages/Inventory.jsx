@@ -82,40 +82,53 @@ const Inventory = () => {
     };
 
     const handleExport = () => {
-        if (products.length === 0) return;
+        console.log("Inventory Export initiated. Products:", products);
+        if (!products || products.length === 0) {
+            console.warn("No products to export.");
+            return;
+        }
 
-        const doc = new jsPDF();
-        const title = "Inventory Master Report";
-        const dateStr = new Date().toISOString().split('T')[0];
+        try {
+            const doc = new jsPDF();
+            const title = "Inventory Master Report";
+            const dateStr = new Date().toISOString().split('T')[0];
 
-        doc.setFontSize(18);
-        doc.text(title, 14, 22);
-        doc.setFontSize(11);
-        doc.setTextColor(100);
-        doc.text(`Generated on: ${dateStr}`, 14, 30);
+            doc.setFontSize(18);
+            doc.text(title, 14, 22);
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${dateStr}`, 14, 30);
 
-        const headers = ["NAME", "SKU", "TYPE", "THICKNESS", "FINISH", "WAREHOUSE", "BATCH", "QUANTITY"];
-        const rows = products.map(p => [
-            p.name || '-',
-            (p._id || p.sku || '-').toString().slice(-6).toUpperCase(),
-            p.type || '-',
-            p.thickness || '-',
-            p.finish || '-',
-            p.warehouse?.name || 'Unassigned',
-            p.batchNumber || '-',
-            (p.quantity || 0).toLocaleString()
-        ]);
+            const headers = ["NAME", "SKU", "TYPE", "THICKNESS", "FINISH", "WAREHOUSE", "BATCH", "QUANTITY"];
+            const rows = products.map(p => [
+                p.name || '-',
+                (p._id || p.sku || '-').toString().slice(-6).toUpperCase(),
+                p.type || '-',
+                p.thickness || '-',
+                p.finish || '-',
+                p.warehouse?.name || 'Unassigned',
+                p.batchNumber || '-',
+                (p.quantity || 0).toLocaleString()
+            ]);
 
-        doc.autoTable({
-            head: [headers],
-            body: rows,
-            startY: 40,
-            theme: 'striped',
-            headStyles: { fillColor: [51, 65, 85], textColor: 255 },
-            styles: { fontSize: 8, cellPadding: 2 }
-        });
+            console.log("Generating inventory table...");
 
-        doc.save(`inventory_report_${dateStr}.pdf`);
+            doc.autoTable({
+                head: [headers],
+                body: rows,
+                startY: 40,
+                theme: 'striped',
+                headStyles: { fillColor: [51, 65, 85], textColor: 255 },
+                styles: { fontSize: 8, cellPadding: 2 }
+            });
+
+            console.log("Saving Inventory PDF...");
+            doc.save(`inventory_report_${dateStr}.pdf`);
+            console.log("Inventory PDF saved successfully.");
+        } catch (error) {
+            console.error("Error exporting inventory PDF:", error);
+            alert("Failed to export Inventory PDF. Check console for details.");
+        }
     };
 
     const fetchAuxData = async () => {

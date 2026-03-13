@@ -70,38 +70,65 @@ const Reports = () => {
     }, [reportType]);
 
     const handleExport = () => {
-        if (data.length === 0) return;
-
-        const doc = new jsPDF();
-        const title = `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`;
-        const dateStr = new Date().toISOString().split('T')[0];
-
-        doc.setFontSize(18);
-        doc.text(title, 14, 22);
-        doc.setFontSize(11);
-        doc.setTextColor(100);
-        doc.text(`Generated on: ${dateStr}`, 14, 30);
-        if (startDate || endDate) {
-            doc.text(`Period: ${startDate || 'Start'} to ${endDate || 'Present'}`, 14, 38);
+        console.log("Export initiated. Data:", data);
+        if (!data || data.length === 0) {
+            console.warn("No data to export.");
+            return;
         }
 
-        const headers = Object.keys(data[0]).map(h => h.replace(/([A-Z])/g, ' $1').trim().toUpperCase());
-        const rows = data.map(row => Object.values(row).map(val => 
-            typeof val === 'number' ? (val > 1000 ? val.toLocaleString() : val) : String(val)
-        ));
+        try {
+            const doc = new jsPDF();
+            const title = `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`;
+            const dateStr = new Date().toISOString().split('T')[0];
 
-        doc.autoTable({
-            head: [headers],
-            body: rows,
-            startY: 45,
-            theme: 'striped',
-            headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold' },
-            alternateRowStyles: { fillColor: [248, 250, 252] },
-            margin: { top: 45 },
-            styles: { fontSize: 8, cellPadding: 3 }
-        });
+            doc.setFontSize(18);
+            doc.text(title, 14, 22);
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${dateStr}`, 14, 30);
+            if (startDate || endDate) {
+                doc.text(`Period: ${startDate || 'Start'} to ${endDate || 'Present'}`, 14, 38);
+            }
 
-        doc.save(`${reportType}_report_${dateStr}.pdf`);
+            // More robust header/row extraction
+            const sampleRow = data[0];
+            const headers = Object.keys(sampleRow).map(h => 
+                h.replace(/([A-Z])/g, ' $1').trim().toUpperCase()
+            );
+
+            const rows = data.map(row => 
+                Object.keys(sampleRow).map(key => {
+                    const val = row[key];
+                    if (val === null || val === undefined) return '';
+                    if (typeof val === 'object') {
+                        return val.name || val.title || val.id || JSON.stringify(val);
+                    }
+                    return typeof val === 'number' ? 
+                        (val > 1000 ? val.toLocaleString() : val) : 
+                        String(val);
+                })
+            );
+
+            console.log("Generating table with headers:", headers);
+
+            doc.autoTable({
+                head: [headers],
+                body: rows,
+                startY: 45,
+                theme: 'striped',
+                headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                margin: { top: 45 },
+                styles: { fontSize: 8, cellPadding: 3 }
+            });
+
+            console.log("Saving PDF...");
+            doc.save(`${reportType}_report_${dateStr}.pdf`);
+            console.log("PDF saved successfully.");
+        } catch (error) {
+            console.error("Error during PDF generation:", error);
+            alert("Failed to generate PDF. Check console for details.");
+        }
     };
 
     // Filter data based on search
