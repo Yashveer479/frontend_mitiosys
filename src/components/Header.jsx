@@ -160,12 +160,12 @@ const Header = () => {
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                 </div>
                 <div className="flex items-center space-x-8 animate-marquee whitespace-nowrap">
-                    <TickerItem label="MDF 18mm" value="$42.50" change="+1.2%" isUp />
-                    <TickerItem label="Timber (Oak)" value="$840/m3" change="-0.5%" />
-                    <TickerItem label="Fuel (Diesel)" value="$1.24/L" change="+0.8%" isUp />
+                    <TickerItem label="MDF 18mm" value="UGX 159,375" change="+1.2%" isUp />
+                    <TickerItem label="Timber (Oak)" value="UGX 3,150,000/m3" change="-0.5%" />
+                    <TickerItem label="Fuel (Diesel)" value="UGX 4,650/L" change="+0.8%" isUp />
                     <TickerItem label="USD/UGX" value="3,750" change="-2.1%" />
                     <TickerItem label="EUR/UGX" value="4,080" change="+0.4%" isUp />
-                    <TickerItem label="Steel Sheet" value="$1,120/t" change="+1.5%" isUp />
+                    <TickerItem label="Steel Sheet" value="UGX 4,200,000/t" change="+1.5%" isUp />
                 </div>
             </div>
 
