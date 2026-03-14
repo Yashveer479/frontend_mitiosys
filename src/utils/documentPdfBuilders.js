@@ -11,26 +11,32 @@ const formatNumber = (value) => Number(value || 0).toLocaleString();
 const formatMoney = (value, currency = 'UGX') => `${formatNumber(value)} ${currency}`;
 
 const drawHeader = (pdf, title, subtitle) => {
+    const companyY = 20;
+    const companyMetaY = 27;
+    const titleY = 20;
+    const subtitleY = 27;
+    const dividerY = 31;
+
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(18);
-    pdf.text('MITIOSYS', 14, 18);
+    pdf.setFontSize(16);
+    pdf.text('MITIOSYS', 14, companyY);
 
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(10);
-    pdf.text('Industrial Area, Plot 78B, Kampala, Uganda', 14, 24);
+    pdf.text('Industrial Area, Plot 78B, Kampala, Uganda', 14, companyMetaY);
 
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(17);
-    pdf.text(title, 196, 18, { align: 'right' });
+    pdf.setFontSize(16);
+    pdf.text(title, 196, titleY, { align: 'right' });
 
     if (subtitle) {
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(10);
-        pdf.text(subtitle, 196, 24, { align: 'right' });
+        pdf.text(subtitle, 196, subtitleY, { align: 'right' });
     }
 
     pdf.setDrawColor(30, 41, 59);
-    pdf.line(14, 28, 196, 28);
+    pdf.line(14, dividerY, 196, dividerY);
 };
 
 export const buildTaxInvoicePdf = (invoiceData) => {
@@ -79,17 +85,19 @@ export const buildTaxInvoicePdf = (invoiceData) => {
     });
 
     const summaryStart = (pdf.lastAutoTable?.finalY || 78) + 10;
+    const labelX = 114;
+    const valueX = 196;
 
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Subtotal:', 140, summaryStart);
-    pdf.text(formatMoney(subtotal), 196, summaryStart, { align: 'right' });
+    pdf.text('Subtotal:', labelX, summaryStart);
+    pdf.text(formatMoney(subtotal), valueX, summaryStart, { align: 'right' });
 
-    pdf.text('VAT:', 140, summaryStart + 7);
-    pdf.text(formatMoney(tax), 196, summaryStart + 7, { align: 'right' });
+    pdf.text('VAT:', labelX, summaryStart + 7);
+    pdf.text(formatMoney(tax), valueX, summaryStart + 7, { align: 'right' });
 
-    pdf.setFontSize(12);
-    pdf.text('Total Payable:', 140, summaryStart + 16);
-    pdf.text(formatMoney(total), 196, summaryStart + 16, { align: 'right' });
+    pdf.setFontSize(11);
+    pdf.text('Total Payable:', labelX, summaryStart + 16);
+    pdf.text(formatMoney(total), valueX, summaryStart + 16, { align: 'right' });
 
     pdf.save(`Tax_Invoice_${invoiceData.invoiceNumber || 'document'}.pdf`);
 };
@@ -187,14 +195,16 @@ export const buildProformaInvoicePdf = (invoiceData) => {
     });
 
     const summaryStart = (pdf.lastAutoTable?.finalY || 84) + 10;
+    const labelX = 114;
+    const valueX = 196;
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Subtotal:', 140, summaryStart);
-    pdf.text(formatMoney(subtotal), 196, summaryStart, { align: 'right' });
-    pdf.text('VAT:', 140, summaryStart + 7);
-    pdf.text(formatMoney(tax), 196, summaryStart + 7, { align: 'right' });
-    pdf.setFontSize(12);
-    pdf.text('Total Due:', 140, summaryStart + 16);
-    pdf.text(formatMoney(total), 196, summaryStart + 16, { align: 'right' });
+    pdf.text('Subtotal:', labelX, summaryStart);
+    pdf.text(formatMoney(subtotal), valueX, summaryStart, { align: 'right' });
+    pdf.text('VAT:', labelX, summaryStart + 7);
+    pdf.text(formatMoney(tax), valueX, summaryStart + 7, { align: 'right' });
+    pdf.setFontSize(11);
+    pdf.text('Total Due:', labelX, summaryStart + 16);
+    pdf.text(formatMoney(total), valueX, summaryStart + 16, { align: 'right' });
 
     pdf.save(`Proforma_Invoice_${invoiceData.invoiceNumber || 'document'}.pdf`);
 };
