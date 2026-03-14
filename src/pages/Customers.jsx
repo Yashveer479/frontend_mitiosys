@@ -139,6 +139,44 @@ const Customers = () => {
         }
     };
 
+    const handleExport = () => {
+        const rows = filteredCustomers.map((c) => ({
+            Name: c.name || '',
+            Contact: c.contact || '',
+            Email: c.email || '',
+            Phone: c.phone || '',
+            Address: c.address || '',
+            Country: c.country || '',
+            TaxId: c.taxId || '',
+            TIN: c.tin || '',
+            VRN: c.vrn || ''
+        }));
+
+        const headers = ['Name', 'Contact', 'Email', 'Phone', 'Address', 'Country', 'TaxId', 'TIN', 'VRN'];
+        const escapeCsv = (value) => {
+            const str = String(value ?? '');
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+        };
+
+        const csv = [
+            headers.join(','),
+            ...rows.map((row) => headers.map((h) => escapeCsv(row[h])).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `customers_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    };
+
     const filteredCustomers = customers.filter(c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (c.contact || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -166,7 +204,11 @@ const Customers = () => {
                         </nav>
                     </div>
                     <div className="flex items-center space-x-3">
-                        <button className="flex items-center space-x-2 bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-95">
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            className="flex items-center space-x-2 bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+                        >
                             <Download size={14} />
                             <span>Export</span>
                         </button>

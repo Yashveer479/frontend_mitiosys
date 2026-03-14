@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useParams } from 'react-router-dom';
 import {
     Download,
     Send,
@@ -16,7 +17,9 @@ import mitioLogo from '../assets/logo.png'; // Assuming logo exists
 
 const ProformaInvoice = () => {
     const [loading, setLoading] = useState(false);
+    const [sending, setSending] = useState(false);
     const [invoiceData, setInvoiceData] = useState(null);
+    const { id: orderId } = useParams();
     const documentRef = React.useRef();
 
     // Mock Data for Display (Ideally this would come from a selected Sales Order)
@@ -44,20 +47,60 @@ const ProformaInvoice = () => {
 
     const handleDownloadPDF = async () => {
         if (!documentRef.current) return;
-        
-        const canvas = await html2canvas(documentRef.current, {
-            scale: 2,
-            useCORS: true,
-            logging: false
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Proforma_Invoice_${invoiceData.invoiceNumber}.pdf`);
+
+        setLoading(true);
+        try {
+            const canvas = await html2canvas(documentRef.current, {
+                scale: 2,
+                useCORS: true,
+                logging: false
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Proforma_Invoice_${invoiceData.invoiceNumber}.pdf`);
+        } catch (err) {
+            console.error('Failed to generate PDF:', err);
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleSendToClient = async () => {
+        if (!invoiceData?.customer?.email) {
+            alert('Customer email is missing for this invoice.');
+            return;
+        }
+
+        setSending(true);
+        try {
+            await api.post('/documents/proforma-invoice/send', {
+                to: invoiceData.customer.email,
+                orderId,
+                invoiceNumber: invoiceData.invoiceNumber,
+                invoiceDate: invoiceData.date,
+                customerName: invoiceData.customer.name,
+                currency: 'UGX',
+                totalAmount,
+                items: invoiceData.items
+            });
+            alert(`Invoice sent to ${invoiceData.customer.email}`);
+        } catch (err) {
+            console.error('Failed to send invoice email:', err);
+            const message = err?.response?.data?.msg || 'Failed to send invoice. Please try again.';
+            alert(message);
+        } finally {
+            setSending(false);
+        }
     };
 
     if (!invoiceData) {
@@ -82,20 +125,31 @@ const ProformaInvoice = () => {
                     <span className="font-bold text-sm">Proforma Invoice Preview</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                    <button className="flex items-center space-x-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-slate-50 transition-colors shadow-sm">
+                    <button
+                        type="button"
+                        onClick={handlePrint}
+                        className="flex items-center space-x-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-slate-50 transition-colors shadow-sm"
+                    >
                         <Printer size={14} />
                         <span>Print</span>
                     </button>
                     <button 
+                        type="button"
                         onClick={handleDownloadPDF}
+                        disabled={loading}
                         className="flex items-center space-x-2 bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-slate-700 transition-colors shadow-lg shadow-slate-900/10"
                     >
                         <Download size={14} />
-                        <span>Download PDF</span>
+                        <span>{loading ? 'Preparing...' : 'Download PDF'}</span>
                     </button>
-                    <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
+                    <button
+                        type="button"
+                        onClick={handleSendToClient}
+                        disabled={sending}
+                        className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
                         <Send size={14} />
-                        <span>Send to Client</span>
+                        <span>{sending ? 'Sending...' : 'Send to Client'}</span>
                     </button>
                 </div>
             </div>

@@ -88,7 +88,11 @@ const TaxInvoice = () => {
                     <span className="font-bold text-sm">Tax Invoice # {invoiceData.invoiceNumber}</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                    <button className="flex items-center space-x-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-slate-50 transition-colors shadow-sm">
+                    <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="flex items-center space-x-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-slate-50 transition-colors shadow-sm"
+                    >
                         <Printer size={14} />
                         <span>Print</span>
                     </button>
