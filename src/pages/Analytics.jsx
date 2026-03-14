@@ -248,9 +248,9 @@ const Analytics = () => {
                             {/* Bars mimicking a trend (simpler than SVG path for pure CSS reliability, or use SVG) */}
                             {/* Using SVG Path for smoother look */}
                             {/* SVG Path for smoother look */}
-                            <svg className="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="none">
+                            <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 100 256" preserveAspectRatio="none">
                                 <path
-                                    d={`M0,${256 - (salesDataPoints[0] * 2)} ${salesDataPoints.map((val, i) => `L${(i / (salesDataPoints.length - 1)) * 100}%,${256 - (val * 2)}`).join(' ')}`}
+                                    d={`M0,${256 - (salesDataPoints[0] * 2)} ${salesDataPoints.map((val, i) => `L${(i / (salesDataPoints.length - 1)) * 100},${256 - (val * 2)}`).join(' ')}`}
                                     fill="none"
                                     stroke="#3B82F6"
                                     strokeWidth="3"
@@ -265,7 +265,7 @@ const Analytics = () => {
                                     </linearGradient>
                                 </defs>
                                 <path
-                                    d={`M0,${256 - (salesDataPoints[0] * 2)} ${salesDataPoints.map((val, i) => `L${(i / (salesDataPoints.length - 1)) * 100}%,${256 - (val * 2)}`).join(' ')} V256 H0 Z`}
+                                    d={`M0,${256 - (salesDataPoints[0] * 2)} ${salesDataPoints.map((val, i) => `L${(i / (salesDataPoints.length - 1)) * 100},${256 - (val * 2)}`).join(' ')} V256 H0 Z`}
                                     fill="url(#gradient)"
                                     stroke="none"
                                 />
