@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import api from '../services/api';
 import {
     Download,
     Printer,
-    Start, // Using generic icon if Badge/Award not available or just simple layout
     Landmark, // For Bank
     FileText,
     MapPin,
     Mail,
     Phone,
-    Globe
 } from 'lucide-react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import mitioLogo from '../assets/logo.png';
+import { exportElementToPdf } from '../utils/pdfExport';
 
 const TaxInvoice = () => {
     const [invoiceData, setInvoiceData] = useState(null);
+    const [downloading, setDownloading] = useState(false);
     const documentRef = React.useRef();
 
     useEffect(() => {
@@ -49,21 +46,17 @@ const TaxInvoice = () => {
     }, []);
 
     const handleDownloadPDF = async () => {
-        if (!documentRef.current) return;
-        
-        const canvas = await html2canvas(documentRef.current, {
-            scale: 2,
-            useCORS: true,
-            logging: false
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Tax_Invoice_${invoiceData.invoiceNumber}.pdf`);
+        if (!documentRef.current || downloading) return;
+
+        setDownloading(true);
+        try {
+            await exportElementToPdf(documentRef.current, `Tax_Invoice_${invoiceData.invoiceNumber}.pdf`);
+        } catch (error) {
+            console.error('Failed to download tax invoice PDF:', error);
+            alert('Failed to download PDF. Please try again.');
+        } finally {
+            setDownloading(false);
+        }
     };
 
     if (!invoiceData) {
@@ -97,11 +90,13 @@ const TaxInvoice = () => {
                         <span>Print</span>
                     </button>
                     <button 
+                        type="button"
                         onClick={handleDownloadPDF}
-                        className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10"
+                        disabled={downloading}
+                        className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         <Download size={14} />
-                        <span>Download PDF</span>
+                        <span>{downloading ? 'Preparing...' : 'Download PDF'}</span>
                     </button>
                 </div>
             </div>
