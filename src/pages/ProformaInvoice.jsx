@@ -18,9 +18,21 @@ import mitioLogo from '../assets/logo.png'; // Assuming logo exists
 const ProformaInvoice = () => {
     const [loading, setLoading] = useState(false);
     const [sending, setSending] = useState(false);
+    const [notice, setNotice] = useState(null);
     const [invoiceData, setInvoiceData] = useState(null);
     const { id: orderId } = useParams();
     const documentRef = React.useRef();
+    const noticeTimerRef = React.useRef(null);
+
+    const showNotice = (type, text) => {
+        setNotice({ type, text });
+        if (noticeTimerRef.current) {
+            clearTimeout(noticeTimerRef.current);
+        }
+        noticeTimerRef.current = setTimeout(() => {
+            setNotice(null);
+        }, 3500);
+    };
 
     // Mock Data for Display (Ideally this would come from a selected Sales Order)
     useEffect(() => {
@@ -77,7 +89,7 @@ const ProformaInvoice = () => {
 
     const handleSendToClient = async () => {
         if (!invoiceData?.customer?.email) {
-            alert('Customer email is missing for this invoice.');
+            showNotice('error', 'Customer email is missing for this invoice.');
             return;
         }
 
@@ -93,11 +105,11 @@ const ProformaInvoice = () => {
                 totalAmount,
                 items: invoiceData.items
             });
-            alert(`Invoice sent to ${invoiceData.customer.email}`);
+            showNotice('success', `Invoice sent to ${invoiceData.customer.email}`);
         } catch (err) {
             console.error('Failed to send invoice email:', err);
             const message = err?.response?.data?.msg || 'Failed to send invoice. Please try again.';
-            alert(message);
+            showNotice('error', message);
         } finally {
             setSending(false);
         }
@@ -117,6 +129,14 @@ const ProformaInvoice = () => {
 
     return (
         <div className="print-page-shell min-h-screen bg-[#F1F5F9] pb-20 pt-10">
+
+            {notice && (
+                <div className="max-w-4xl mx-auto mb-4 px-4 sm:px-0">
+                    <div className={`rounded-lg border px-4 py-3 text-sm font-semibold ${notice.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700'}`}>
+                        {notice.text}
+                    </div>
+                </div>
+            )}
 
             {/* Toolbar */}
             <div className="print-toolbar max-w-4xl mx-auto mb-6 flex items-center justify-between px-4 sm:px-0">
