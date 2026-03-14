@@ -11,40 +11,35 @@ const buildCanvasOptions = (useForeignObjectRendering) => ({
     foreignObjectRendering: useForeignObjectRendering
 });
 
-const isCanvasBlank = (canvas) => {
-    if (!canvas || canvas.width === 0 || canvas.height === 0) {
-        return true;
-    }
-
-    const context = canvas.getContext('2d', { willReadFrequently: true });
-    if (!context) {
-        return true;
-    }
-
-    const sampleCountPerAxis = 10;
-    const stepX = Math.max(1, Math.floor(canvas.width / sampleCountPerAxis));
-    const stepY = Math.max(1, Math.floor(canvas.height / sampleCountPerAxis));
-
-    let nonWhitePixels = 0;
-
-    for (let y = 0; y < canvas.height; y += stepY) {
-        for (let x = 0; x < canvas.width; x += stepX) {
-            const pixel = context.getImageData(x, y, 1, 1).data;
-            const [r, g, b, a] = pixel;
-
-            const isVisible = a > 10;
-            const isNearlyWhite = r > 245 && g > 245 && b > 245;
-
-            if (isVisible && !isNearlyWhite) {
-                nonWhitePixels += 1;
-                if (nonWhitePixels >= 3) {
-                    return false;
-                }
-            }
+const waitForAssets = async (element) => {
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+        try {
+            await document.fonts.ready;
+        } catch {
+            // Ignore font loading failures and proceed with best effort.
         }
     }
 
-    return true;
+    const images = Array.from(element.querySelectorAll('img'));
+    await Promise.all(
+        images.map(async (img) => {
+            if (img.complete && img.naturalWidth > 0) {
+                return;
+            }
+
+            try {
+                if (img.decode) {
+                    await img.decode();
+                }
+            } catch {
+                await new Promise((resolve) => {
+                    const onDone = () => resolve();
+                    img.addEventListener('load', onDone, { once: true });
+                    img.addEventListener('error', onDone, { once: true });
+                });
+            }
+        })
+    );
 };
 
 const addCanvasToPdf = (canvas, fileName) => {
@@ -69,10 +64,39 @@ const addCanvasToPdf = (canvas, fileName) => {
     pdf.save(fileName);
 };
 
+const addHtmlToPdf = (element, fileName) =>
+    new Promise((resolve, reject) => {
+        try {
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            pdf.html(element, {
+                margin: [8, 8, 8, 8],
+                autoPaging: 'text',
+                html2canvas: {
+                    useCORS: true,
+                    scale: 1,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                },
+                callback: (doc) => {
+                    try {
+                        doc.save(fileName);
+                        resolve();
+                    } catch (saveErr) {
+                        reject(saveErr);
+                    }
+                }
+            });
+        } catch (err) {
+            reject(err);
+        }
+    });
+
 export const exportElementToPdf = async (element, fileName) => {
     if (!element) {
         throw new Error('No printable element found.');
     }
+
+    await waitForAssets(element);
 
     const renderModes = [
         { foreignObjectRendering: false, label: 'standard' },
@@ -85,8 +109,8 @@ export const exportElementToPdf = async (element, fileName) => {
         try {
             const canvas = await html2canvas(element, buildCanvasOptions(mode.foreignObjectRendering));
 
-            if (isCanvasBlank(canvas)) {
-                throw new Error(`Rendered canvas is blank using ${mode.label} mode.`);
+            if (!canvas || canvas.width === 0 || canvas.height === 0) {
+                throw new Error(`Rendered canvas is empty using ${mode.label} mode.`);
             }
 
             addCanvasToPdf(canvas, fileName);
@@ -95,6 +119,13 @@ export const exportElementToPdf = async (element, fileName) => {
             lastError = error;
             console.warn(`PDF export failed in ${mode.label} mode:`, error);
         }
+    }
+
+    try {
+        await addHtmlToPdf(element, fileName);
+        return;
+    } catch (htmlError) {
+        console.warn('PDF export failed in jsPDF.html fallback mode:', htmlError);
     }
 
     throw lastError || new Error('PDF export failed in all render modes.');
