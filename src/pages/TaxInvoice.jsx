@@ -79,10 +79,10 @@ const TaxInvoice = () => {
     const totalAmount = calculateSubtotal() + calculateTax();
 
     return (
-        <div className="min-h-screen bg-[#F1F5F9] pb-20 pt-10">
+        <div className="print-page-shell min-h-screen bg-[#F1F5F9] pb-20 pt-10">
 
             {/* Toolbar */}
-            <div className="max-w-[210mm] mx-auto mb-6 flex items-center justify-between px-4 sm:px-0">
+            <div className="print-toolbar max-w-[210mm] mx-auto mb-6 flex items-center justify-between px-4 sm:px-0">
                 <div className="flex items-center space-x-2 text-slate-500">
                     <FileText size={18} />
                     <span className="font-bold text-sm">Tax Invoice # {invoiceData.invoiceNumber}</span>
@@ -107,7 +107,7 @@ const TaxInvoice = () => {
             </div>
 
             {/* A4 Document Container */}
-            <div ref={documentRef} className="max-w-[210mm] mx-auto bg-white shadow-2xl shadow-slate-300/50 min-h-[297mm] p-12 sm:p-16 relative flex flex-col justify-between">
+            <div ref={documentRef} className="printable-document max-w-[210mm] mx-auto bg-white shadow-2xl shadow-slate-300/50 min-h-[297mm] p-12 sm:p-16 relative flex flex-col justify-between">
 
                 {/* Top Section */}
                 <div>
