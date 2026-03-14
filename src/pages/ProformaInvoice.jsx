@@ -116,10 +116,10 @@ const ProformaInvoice = () => {
     const totalAmount = calculateSubtotal() + calculateTax();
 
     return (
-        <div className="min-h-screen bg-[#F1F5F9] pb-20 pt-10">
+        <div className="print-page-shell min-h-screen bg-[#F1F5F9] pb-20 pt-10">
 
             {/* Toolbar */}
-            <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between px-4 sm:px-0">
+            <div className="print-toolbar max-w-4xl mx-auto mb-6 flex items-center justify-between px-4 sm:px-0">
                 <div className="flex items-center space-x-2 text-slate-500">
                     <FileText size={18} />
                     <span className="font-bold text-sm">Proforma Invoice Preview</span>
@@ -155,7 +155,7 @@ const ProformaInvoice = () => {
             </div>
 
             {/* A4 Document Container */}
-            <div ref={documentRef} className="max-w-4xl mx-auto bg-white shadow-2xl shadow-slate-300/50 min-h-[1100px] p-12 sm:p-16 relative">
+            <div ref={documentRef} className="printable-document max-w-4xl mx-auto bg-white shadow-2xl shadow-slate-300/50 min-h-[1100px] p-12 sm:p-16 relative">
 
                 {/* Header */}
                 <div className="flex justify-between items-start border-b-2 border-slate-900 pb-8 mb-8">

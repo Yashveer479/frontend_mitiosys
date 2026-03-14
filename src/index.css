@@ -69,3 +69,56 @@ body {
 .animate-fade {
   animation: fadeIn 0.5s ease-out;
 }
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  html,
+  body,
+  #root {
+    background: #fff !important;
+  }
+
+  /* Remove app shell chrome in print output. */
+  .fixed.left-0.top-0.h-screen.w-64,
+  header,
+  footer {
+    display: none !important;
+  }
+
+  /* Remove desktop layout offsets created for sidebar/header. */
+  main {
+    padding-left: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  main > div {
+    padding: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  /* Hide print page action bars and keep only document body. */
+  .print-toolbar {
+    display: none !important;
+  }
+
+  .print-page-shell {
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+  }
+
+  .printable-document {
+    max-width: 190mm !important;
+    min-height: auto !important;
+    margin: 0 auto !important;
+    padding: 8mm !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+}
