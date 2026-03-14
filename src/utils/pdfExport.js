@@ -3,17 +3,49 @@ import html2canvas from 'html2canvas';
 
 const DEFAULT_SCALE = 2;
 
-const buildCanvasOptions = (element, useForeignObjectRendering) => ({
+const buildCanvasOptions = (useForeignObjectRendering) => ({
     scale: Math.max(window.devicePixelRatio || DEFAULT_SCALE, DEFAULT_SCALE),
     useCORS: true,
     logging: false,
     backgroundColor: '#ffffff',
-    foreignObjectRendering: useForeignObjectRendering,
-    windowWidth: Math.max(element.scrollWidth, element.clientWidth),
-    windowHeight: Math.max(element.scrollHeight, element.clientHeight),
-    scrollX: 0,
-    scrollY: -window.scrollY
+    foreignObjectRendering: useForeignObjectRendering
 });
+
+const isCanvasBlank = (canvas) => {
+    if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        return true;
+    }
+
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) {
+        return true;
+    }
+
+    const sampleCountPerAxis = 10;
+    const stepX = Math.max(1, Math.floor(canvas.width / sampleCountPerAxis));
+    const stepY = Math.max(1, Math.floor(canvas.height / sampleCountPerAxis));
+
+    let nonWhitePixels = 0;
+
+    for (let y = 0; y < canvas.height; y += stepY) {
+        for (let x = 0; x < canvas.width; x += stepX) {
+            const pixel = context.getImageData(x, y, 1, 1).data;
+            const [r, g, b, a] = pixel;
+
+            const isVisible = a > 10;
+            const isNearlyWhite = r > 245 && g > 245 && b > 245;
+
+            if (isVisible && !isNearlyWhite) {
+                nonWhitePixels += 1;
+                if (nonWhitePixels >= 3) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+};
 
 const addCanvasToPdf = (canvas, fileName) => {
     const imgData = canvas.toDataURL('image/png');
@@ -42,16 +74,28 @@ export const exportElementToPdf = async (element, fileName) => {
         throw new Error('No printable element found.');
     }
 
-    try {
-        const canvas = await html2canvas(element, buildCanvasOptions(element, true));
-        addCanvasToPdf(canvas, fileName);
-    } catch (primaryError) {
-        // Fallback capture mode for browsers that fail foreignObject rendering.
-        const fallbackCanvas = await html2canvas(element, buildCanvasOptions(element, false));
-        addCanvasToPdf(fallbackCanvas, fileName);
-        if (primaryError) {
-            // Keep a trace in console for diagnostics without blocking users.
-            console.warn('PDF export used fallback renderer:', primaryError);
+    const renderModes = [
+        { foreignObjectRendering: false, label: 'standard' },
+        { foreignObjectRendering: true, label: 'foreignObject' }
+    ];
+
+    let lastError = null;
+
+    for (const mode of renderModes) {
+        try {
+            const canvas = await html2canvas(element, buildCanvasOptions(mode.foreignObjectRendering));
+
+            if (isCanvasBlank(canvas)) {
+                throw new Error(`Rendered canvas is blank using ${mode.label} mode.`);
+            }
+
+            addCanvasToPdf(canvas, fileName);
+            return;
+        } catch (error) {
+            lastError = error;
+            console.warn(`PDF export failed in ${mode.label} mode:`, error);
         }
     }
+
+    throw lastError || new Error('PDF export failed in all render modes.');
 };
