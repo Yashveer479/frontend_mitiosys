@@ -9,7 +9,7 @@ import {
     Package,
 } from 'lucide-react';
 import mitioLogo from '../assets/logo.png';
-import { exportElementToPdf } from '../utils/pdfExport';
+import { buildDeliveryNotePdf } from '../utils/documentPdfBuilders';
 
 const DeliveryNote = () => {
     const [deliveryData, setDeliveryData] = useState(null);
@@ -41,11 +41,11 @@ const DeliveryNote = () => {
     }, []);
 
     const handleDownloadPDF = async () => {
-        if (!documentRef.current || downloading) return;
+        if (!deliveryData || downloading) return;
 
         setDownloading(true);
         try {
-            await exportElementToPdf(documentRef.current, `Delivery_Note_${deliveryData.dispatchNumber}.pdf`);
+            buildDeliveryNotePdf(deliveryData);
         } catch (error) {
             console.error('Failed to download delivery note PDF:', error);
             alert('Failed to download PDF. Please try again.');

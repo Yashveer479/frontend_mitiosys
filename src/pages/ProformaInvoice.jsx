@@ -12,7 +12,7 @@ import {
     Globe
 } from 'lucide-react';
 import mitioLogo from '../assets/logo.png'; // Assuming logo exists
-import { exportElementToPdf } from '../utils/pdfExport';
+import { buildProformaInvoicePdf } from '../utils/documentPdfBuilders';
 
 const ProformaInvoice = () => {
     const [loading, setLoading] = useState(false);
@@ -57,11 +57,11 @@ const ProformaInvoice = () => {
     }, []);
 
     const handleDownloadPDF = async () => {
-        if (!documentRef.current) return;
+        if (!invoiceData) return;
 
         setLoading(true);
         try {
-            await exportElementToPdf(documentRef.current, `Proforma_Invoice_${invoiceData.invoiceNumber}.pdf`);
+            buildProformaInvoicePdf(invoiceData);
         } catch (err) {
             console.error('Failed to generate PDF:', err);
             alert('Failed to generate PDF. Please try again.');

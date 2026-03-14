@@ -9,7 +9,7 @@ import {
     Phone,
 } from 'lucide-react';
 import mitioLogo from '../assets/logo.png';
-import { exportElementToPdf } from '../utils/pdfExport';
+import { buildTaxInvoicePdf } from '../utils/documentPdfBuilders';
 
 const TaxInvoice = () => {
     const [invoiceData, setInvoiceData] = useState(null);
@@ -46,11 +46,11 @@ const TaxInvoice = () => {
     }, []);
 
     const handleDownloadPDF = async () => {
-        if (!documentRef.current || downloading) return;
+        if (!invoiceData || downloading) return;
 
         setDownloading(true);
         try {
-            await exportElementToPdf(documentRef.current, `Tax_Invoice_${invoiceData.invoiceNumber}.pdf`);
+            buildTaxInvoicePdf(invoiceData);
         } catch (error) {
             console.error('Failed to download tax invoice PDF:', error);
             alert('Failed to download PDF. Please try again.');
