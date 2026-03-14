@@ -72,7 +72,9 @@ const Products = () => {
             setShowModal(false);
             resetForm();
         } catch (err) {
-            setError(err.response?.data?.msg || 'Error saving product');
+            const apiError = err.response?.data;
+            const firstValidationMessage = Array.isArray(apiError?.errors) ? apiError.errors[0]?.msg : '';
+            setError(firstValidationMessage || apiError?.msg || 'Error saving product');
         }
     };
 
