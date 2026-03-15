@@ -19,6 +19,8 @@ import {
     AlertCircle,
     Globe
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const Customers = () => {
     const [customers, setCustomers] = useState([]);
@@ -139,42 +141,46 @@ const Customers = () => {
         }
     };
 
-    const handleExport = () => {
-        const rows = filteredCustomers.map((c) => ({
-            Name: c.name || '',
-            Contact: c.contact || '',
-            Email: c.email || '',
-            Phone: c.phone || '',
-            Address: c.address || '',
-            Country: c.country || '',
-            TaxId: c.taxId || '',
-            TIN: c.tin || '',
-            VRN: c.vrn || ''
-        }));
+    const handlePdfExport = () => {
+        const doc = new jsPDF();
+        
+        // Add title
+        doc.setFontSize(18);
+        doc.text('Customer Relations', 14, 22);
 
-        const headers = ['Name', 'Contact', 'Email', 'Phone', 'Address', 'Country', 'TaxId', 'TIN', 'VRN'];
-        const escapeCsv = (value) => {
-            const str = String(value ?? '');
-            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-                return `"${str.replace(/"/g, '""')}"`;
-            }
-            return str;
-        };
+        // Define columns and rows
+        const columns = ['Name', 'Contact', 'Email', 'Phone', 'Address', 'Country', 'TaxId', 'TIN', 'VRN'];
+        const rows = filteredCustomers.map((c) => [
+            c.name || '',
+            c.contact || '',
+            c.email || '',
+            c.phone || '',
+            c.address || '',
+            c.country || '',
+            c.taxId || '',
+            c.tin || '',
+            c.vrn || ''
+        ]);
 
-        const csv = [
-            headers.join(','),
-            ...rows.map((row) => headers.map((h) => escapeCsv(row[h])).join(','))
-        ].join('\n');
+        // Add table
+        doc.autoTable({
+            head: [columns],
+            body: rows,
+            startY: 30,
+            theme: 'grid',
+            styles: {
+                fontSize: 8,
+                cellPadding: 2,
+            },
+            headStyles: {
+                fillColor: [22, 160, 133], // A nice shade of green
+                textColor: 255,
+                fontStyle: 'bold',
+            },
+        });
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `customers_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
+        // Save the PDF
+        doc.save(`customers_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     const filteredCustomers = customers.filter(c =>
@@ -200,23 +206,16 @@ const Customers = () => {
                         <nav className="flex items-center space-x-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                             <span>CRM</span>
                             <span className="text-slate-300">•</span>
-                            <span className="text-blue-600">Enterprise Registry</span>
+                            <span>Enterprise Registry</span>
                         </nav>
                     </div>
-                    <div className="flex items-center space-x-3">
-                        <button
-                            type="button"
-                            onClick={handleExport}
-                            className="flex items-center space-x-2 bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
-                        >
-                            <Download size={14} />
+                    <div className="flex items-center gap-3">
+                        <button onClick={handlePdfExport} className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-slate-600 h-10 px-4 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <Download size={16} />
                             <span>Export</span>
                         </button>
-                        <button
-                            onClick={() => handleOpenModal()}
-                            className="flex items-center space-x-2 bg-blue-600 px-6 py-2.5 rounded-xl text-xs font-black text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-                        >
-                            <Plus size={16} strokeWidth={3} />
+                        <button onClick={() => handleOpenModal()} className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-white h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <Plus size={16} />
                             <span>Add Customer</span>
                         </button>
                     </div>
