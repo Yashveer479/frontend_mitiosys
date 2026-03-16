@@ -39,8 +39,10 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
         try {
             await api.post(`/requests/${requestId}/${action}`, { comment });
             setComment('');
-            fetchDetails();
-            onUpdate();
+            if (typeof onUpdate === 'function') {
+                await onUpdate();
+            }
+            onBack();
         } catch (err) {
             console.error(`Error during ${action}:`, err);
             alert(err.response?.data?.msg || `Failed to ${action} request`);
@@ -63,6 +65,12 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
         (effectiveApprovalLevel === 'GM' && request.status === 'PENDING_GM_APPROVAL') ||
         (effectiveApprovalLevel === 'DM' && request.status === 'PENDING_DM_APPROVAL')
     );
+
+    const requiredApprovalLevel =
+        request.status === 'PENDING_PM_APPROVAL' ? 'PM' :
+        request.status === 'PENDING_GM_APPROVAL' ? 'GM' :
+        request.status === 'PENDING_DM_APPROVAL' ? 'DM' :
+        null;
 
     return (
         <div className="animate-in slide-in-from-right-4 duration-300">
@@ -174,6 +182,18 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
                                     <span>Reject</span>
                                 </button>
                             </div>
+                        </div>
+                    )}
+
+                    {!canApprove && requiredApprovalLevel && (
+                        <div className="bg-amber-50 rounded-2xl border border-amber-200 p-5">
+                            <p className="text-xs font-black uppercase tracking-widest text-amber-700 mb-2">Approval Action Locked</p>
+                            <p className="text-sm font-semibold text-amber-800">
+                                This step requires <span className="font-black">{requiredApprovalLevel}</span> approval.
+                            </p>
+                            <p className="text-xs font-bold text-amber-700 mt-1">
+                                Current account: <span className="font-black">{effectiveApprovalLevel}</span> ({user?.role || 'unknown'})
+                            </p>
                         </div>
                     )}
 

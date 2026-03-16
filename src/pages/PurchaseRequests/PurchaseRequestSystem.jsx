@@ -3,7 +3,7 @@ import {
     Plus, List, CheckCircle, Clock, XCircle, AlertCircle, 
     Filter, Search, ArrowRight, MessageSquare, User, Calendar
 } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import PurchaseRequestForm from './PurchaseRequestForm';
 import PurchaseRequestList from './PurchaseRequestList';
@@ -11,8 +11,9 @@ import PurchaseRequestDetails from './PurchaseRequestDetails';
 import { useAuth } from '../../context/AuthContext';
 
 const PurchaseRequestSystem = () => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const { id: routeRequestId } = useParams();
     const [activeTab, setActiveTab] = useState('list');
     const [selectedRequestId, setSelectedRequestId] = useState(null);
@@ -25,19 +26,48 @@ const PurchaseRequestSystem = () => {
         myRequests: 0
     });
 
+    const query = new URLSearchParams(location.search);
+    const forceLogin = query.get('forceLogin') === '1';
+    const approverEmail = String(query.get('approverEmail') || '').trim().toLowerCase();
+
+    useEffect(() => {
+        const enforceApproverLogin = async () => {
+            if (!forceLogin) return;
+
+            const currentEmail = String(user?.email || '').trim().toLowerCase();
+            const mustLogin = !currentEmail;
+            const missingApproverHint = !approverEmail;
+            const emailMismatch = approverEmail && currentEmail !== approverEmail;
+
+            if (mustLogin || missingApproverHint || emailMismatch) {
+                try {
+                    await logout();
+                } catch (_) {
+                    // best effort logout
+                }
+
+                localStorage.removeItem('token');
+                localStorage.removeItem('sessionId');
+                const next = encodeURIComponent(`${location.pathname}${location.search}`);
+                navigate(`/login?next=${next}`, { replace: true });
+            }
+        };
+
+        enforceApproverLogin();
+    }, [forceLogin, approverEmail, user?.email, logout, location.pathname, location.search, navigate]);
+
     const fetchRequests = async () => {
         try {
             setLoading(true);
             const res = await api.get('/requests');
             const data = Array.isArray(res.data) ? res.data : [];
             setRequests(data);
-            
-            // Calculate stats
+
             const pending = data.filter(r => r.status.startsWith('PENDING')).length;
             const approved = data.filter(r => r.status === 'APPROVED').length;
             const rejected = data.filter(r => r.status === 'REJECTED').length;
             const myRequests = data.filter(r => r.requested_by === user.id).length;
-            
+
             setStats({ pending, approved, rejected, myRequests });
         } catch (err) {
             console.error('Error fetching requests:', err);
@@ -46,37 +76,72 @@ const PurchaseRequestSystem = () => {
         }
     };
 
+    const fetchSingleRequest = async (id) => {
+        try {
+            const res = await api.get(`/requests/${id}`);
+            // Manually add or update the request in the main list
+            setRequests(prev => {
+                const existing = prev.find(r => r.id === res.data.id);
+                if (existing) {
+                    return prev.map(r => r.id === res.data.id ? res.data : r);
+                }
+                return [...prev, res.data];
+            });
+        } catch (error) {
+            console.error(`Failed to fetch single request ${id}`, error);
+            // If the request is not found, maybe navigate back or show a specific message
+            if (error.response && error.response.status === 404) {
+                navigate('/purchase-requests');
+            }
+        }
+    };
+
     useEffect(() => {
+        // Fetch all requests initially
         fetchRequests();
     }, []);
 
     useEffect(() => {
         if (routeRequestId) {
+            if (routeRequestId === 'new') {
+                setSelectedRequestId(null);
+                setActiveTab('create');
+                return;
+            }
+
+            // When navigating directly to a request URL, ensure that request's data is loaded.
+            const requestDataExists = requests.some(r => r.id.toString() === routeRequestId);
+            
+            // Set the view to details
             setSelectedRequestId(routeRequestId);
             setActiveTab('details');
-            return;
-        }
 
-        setSelectedRequestId(null);
-        setActiveTab((prev) => (prev === 'details' ? 'list' : prev));
-    }, [routeRequestId]);
+            // If the request data isn't already in our list, fetch it specifically.
+            if (!requestDataExists) {
+                fetchSingleRequest(routeRequestId);
+            }
+        } else {
+            // If there's no ID in the route, go back to the list view.
+            setSelectedRequestId(null);
+            setActiveTab((prev) => (prev === 'details' ? 'list' : prev));
+        }
+    }, [routeRequestId, requests]); // Add `requests` as a dependency
 
     const handleViewDetails = (id) => {
-        setSelectedRequestId(id);
-        setActiveTab('details');
         navigate(`/purchase-requests/${id}`);
     };
 
     const handleBackToList = () => {
-        setSelectedRequestId(null);
-        setActiveTab('list');
         navigate('/purchase-requests');
-        fetchRequests();
+    };
+
+    const handleRequestUpdated = () => {
+        return fetchRequests();
     };
 
     const handleRequestCreated = () => {
-        setActiveTab('list');
         fetchRequests();
+        navigate('/purchase-requests');
     };
 
     return (
@@ -89,12 +154,8 @@ const PurchaseRequestSystem = () => {
                 </div>
                 <div className="flex items-center gap-3">
                     <button 
-                        onClick={() => setActiveTab('create')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
-                            activeTab === 'create' 
-                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
-                            : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-200 hover:text-blue-600'
-                        }`}
+                        onClick={() => navigate('/purchase-requests/new')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700`}
                     >
                         <Plus size={18} />
                         <span>New Request</span>
@@ -139,39 +200,45 @@ const PurchaseRequestSystem = () => {
                 {/* Tabs */}
                 <div className="flex items-center border-b border-slate-100 bg-slate-50/50 px-6">
                     <TabButton 
-                        active={activeTab === 'list'} 
-                        onClick={() => setActiveTab('list')} 
+                        active={!routeRequestId} 
+                        onClick={handleBackToList} 
                         label="All Requests" 
                         count={requests.length}
                     />
-                    {selectedRequestId && (
+                    {routeRequestId && routeRequestId !== 'new' && (
                         <TabButton 
-                            active={activeTab === 'details'} 
-                            onClick={() => setActiveTab('details')} 
+                            active={true}
+                            onClick={() => {}} 
                             label="Request Details" 
+                        />
+                    )}
+                     {routeRequestId === 'new' && (
+                        <TabButton 
+                            active={true}
+                            onClick={() => {}} 
+                            label="Create New Request" 
                         />
                     )}
                 </div>
 
                 <div className="p-6">
-                    {activeTab === 'list' && (
+                    {!routeRequestId ? (
                         <PurchaseRequestList 
                             requests={requests} 
                             loading={loading} 
                             onViewDetails={handleViewDetails} 
                         />
-                    )}
-                    {activeTab === 'create' && (
+                    ) : routeRequestId === 'new' ? (
                         <PurchaseRequestForm 
-                            onCancel={() => setActiveTab('list')} 
+                            onCancel={handleBackToList} 
                             onSuccess={handleRequestCreated}
                         />
-                    )}
-                    {activeTab === 'details' && selectedRequestId && (
+                    ) : (
                         <PurchaseRequestDetails 
-                            requestId={selectedRequestId} 
+                            requestId={routeRequestId} 
                             onBack={handleBackToList}
-                            onUpdate={fetchRequests}
+                            onUpdate={handleRequestUpdated}
+                            key={routeRequestId}
                         />
                     )}
                 </div>

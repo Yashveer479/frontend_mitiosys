@@ -19,6 +19,7 @@ import mitioLogo from '../assets/logo.png';
 import DashboardCard from '../components/dashboard/DashboardCard';
 import QuickActionsMenu from '../components/dashboard/QuickActionsMenu';
 import NotificationPanel from '../components/dashboard/NotificationPanel';
+import PendingApprovalsWidget from './Dashboard/PendingApprovalsWidget';
 
 const INDUSTRIAL_PERFORMANCE_DATA = [
     { month: 1, label: 'JAN', year: 2026, plant: 'SITE-A', productionOutput: 420, marketAbsorption: 388, efficiency: 92.4 },
@@ -347,6 +348,9 @@ const Dashboard = () => {
 
                     {/* Right Column (Glassmorphism Operational Hub) */}
                     <div className="lg:col-span-4 space-y-8">
+
+                        {/* Approvals Widget */}
+                        <PendingApprovalsWidget />
 
                         {/* Notifications Card */}
                         <NotificationPanel alerts={intelligenceAlerts} />

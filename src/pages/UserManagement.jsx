@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { useAuth } from '../context/AuthContext';
 import {
     Users,
     UserPlus,
     MoreVertical,
+    Trash2,
     Shield,
     Unlock,
     Lock,
@@ -17,12 +19,14 @@ import {
 import api from '../services/api';
 
 const UserManagement = () => {
+    const { user: currentUser } = useAuth();
     const [users, setUsers] = useState([]);
     const [logs, setLogs] = useState([]);
     const [view, setView] = useState('users'); // 'users' or 'logs'
     const [filter, setFilter] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [loading, setLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
@@ -32,6 +36,7 @@ const UserManagement = () => {
         name: '',
         email: '',
         role: 'staff',
+        approval_level: 'NONE',
         password: ''
     });
 
@@ -86,7 +91,7 @@ const UserManagement = () => {
             await api.post('/users', formData);
             fetchUsers();
             setShowAddModal(false);
-            setFormData({ name: '', email: '', role: 'staff', password: '' });
+            setFormData({ name: '', email: '', role: 'staff', approval_level: 'NONE', password: '' });
         } catch (err) {
             alert(err.response?.data?.msg || "Failed to create user");
         } finally {
@@ -119,6 +124,22 @@ const UserManagement = () => {
             alert("Password reset successful");
         } catch (err) {
             alert(err.response?.data?.msg || "Failed to reset password");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeleteUser = async () => {
+        if (!selectedUser) return;
+        setActionLoading(true);
+        try {
+            await api.delete(`/users/${selectedUser.id}`);
+            fetchUsers();
+            setShowDeleteModal(false);
+            setSelectedUser(null);
+            alert('User successfully deleted.');
+        } catch (err) {
+            alert(err.response?.data?.msg || "Failed to delete user");
         } finally {
             setActionLoading(false);
         }
@@ -195,6 +216,7 @@ const UserManagement = () => {
                                         <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest w-16">ID</th>
                                         <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">User Profile</th>
                                         <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
+                                        <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Approval Level</th>
                                         <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
                                         <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Login</th>
                                         <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
@@ -224,6 +246,15 @@ const UserManagement = () => {
                                                     {user.role}
                                                 </span>
                                             </td>
+                                            <td className="py-4 px-6">
+                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide ${user.approval_level === 'PM' ? 'bg-indigo-100 text-indigo-700' :
+                                                    user.approval_level === 'GM' ? 'bg-amber-100 text-amber-700' :
+                                                        user.approval_level === 'DM' ? 'bg-rose-100 text-rose-700' :
+                                                            'bg-slate-100 text-slate-400'
+                                                    }`}>
+                                                    {user.approval_level || 'NONE'}
+                                                </span>
+                                            </td>
                                             <td className="py-4 px-6 text-center">
                                                 <button
                                                     onClick={() => toggleStatus(user.id)}
@@ -250,6 +281,17 @@ const UserManagement = () => {
                                                     >
                                                         <KeyRound size={16} />
                                                     </button>
+                                                    {currentUser && currentUser.role === 'admin' && currentUser.id !== user.id && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedUser(user);
+                                                                setShowDeleteModal(true);
+                                                            }}
+                                                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete User"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -352,6 +394,23 @@ const UserManagement = () => {
                                         <option value="logistics">Logistics</option>
                                     </select>
                                 </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 pointer-events-none">
+                                        Approval Level
+                                        {!['admin', 'manager'].includes(formData.role) && <span className="ml-2 text-[10px] text-amber-500 font-bold lowercase">(Managers/Admins only)</span>}
+                                    </label>
+                                    <select
+                                        value={formData.approval_level}
+                                        disabled={!['admin', 'manager'].includes(formData.role)}
+                                        onChange={(e) => setFormData({ ...formData, approval_level: e.target.value })}
+                                        className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-500 transition-all ${!['admin', 'manager'].includes(formData.role) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        <option value="NONE">None</option>
+                                        <option value="PM">PM (Project Manager)</option>
+                                        <option value="GM">GM (General Manager)</option>
+                                        <option value="DM">DM (Director Manager)</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div className="pt-4 flex justify-end space-x-3">
@@ -430,6 +489,40 @@ const UserManagement = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete User Modal */}
+            {showDeleteModal && selectedUser && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-red-50">
+                            <h2 className="text-lg font-black text-red-800">Confirm User Deletion</h2>
+                            <button onClick={() => setShowDeleteModal(false)} className="text-red-400 hover:text-red-600 transition-colors">
+                                <XCircle size={24} />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-sm text-slate-600 mb-4">
+                                Are you sure you want to delete the user <strong className="text-slate-900">{selectedUser.name}</strong> ({selectedUser.email})? This action cannot be undone.
+                            </p>
+                        </div>
+                        <div className="p-6 bg-slate-50 flex justify-end space-x-4">
+                            <button
+                                onClick={() => setShowDeleteModal(false)}
+                                className="px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide text-slate-600 bg-slate-200 hover:bg-slate-300 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteUser}
+                                disabled={actionLoading}
+                                className="flex items-center space-x-2 bg-red-600 text-white px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20 active:scale-95 disabled:opacity-50"
+                            >
+                                {actionLoading ? <RefreshCw className="animate-spin" size={16} /> : <span>Delete User</span>}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

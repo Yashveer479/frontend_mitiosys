@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Zap, Search, Bell, User, ArrowUpRight, ArrowDownRight, Package, Factory, ShoppingCart, CheckCheck, X } from 'lucide-react';
+import { Zap, Search, Bell, User, ArrowUpRight, ArrowDownRight, Package, Factory, ShoppingCart, CheckCheck, X, ClipboardList } from 'lucide-react';
 import { toServerUrl } from '../services/urlConfig';
 import api from '../services/api';
 
@@ -10,6 +10,7 @@ const NOTIFICATION_ICONS = {
     PRODUCTION_COMPLETE: { icon: Factory, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100' },
     ORDER_CREATED: { icon: ShoppingCart, color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100' },
     ORDER_DISPATCHED: { icon: ShoppingCart, color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100' },
+    PURCHASE_REQUEST: { icon: ClipboardList, color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-100' },
 };
 
 const FALLBACK_NOTIFICATIONS = [
@@ -64,6 +65,14 @@ const resolveNotificationPath = (notification) => {
         message.includes('order')
     ) {
         return '/sales/orders';
+    }
+
+    if (
+        notification.type === 'PURCHASE_REQUEST' ||
+        title.includes('purchase request') ||
+        message.includes('purchase request')
+    ) {
+        return `/purchase-requests`;
     }
 
     return '/';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { ShieldCheck, Lock, Mail, ArrowRight, Eye, EyeOff, User, AlertCircle, RefreshCw } from 'lucide-react';
 import loginBg from '../assets/login-bg.jpg';
 import mitioLogo from '../assets/logo.png';
@@ -28,8 +28,20 @@ const Login = () => {
     const [cooldown, setCooldown] = useState(0); // seconds left before resend allowed
     const { login, register, requestOtp, verifyOtp } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const otpInputRef = useRef(null);
     const cooldownRef = useRef(null);
+
+    const rawNext = new URLSearchParams(location.search).get('next') || '/';
+    const nextPath = rawNext.startsWith('/') ? rawNext : '/';
+
+    useEffect(() => {
+        // Forced approval links must always require fresh login as intended approver.
+        if (nextPath.includes('forceLogin=1')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('sessionId');
+        }
+    }, [nextPath]);
 
     // Start / manage resend cooldown timer
     const startCooldown = () => {
@@ -62,11 +74,11 @@ const Login = () => {
         try {
             if (isSignUp) {
                 await register(name, email, password);
-                navigate('/');
+                navigate(nextPath, { replace: true });
             } else if (otpMode) {
                 if (otpSent) {
                     await verifyOtp(email, otpCode);
-                    navigate('/');
+                    navigate(nextPath, { replace: true });
                 } else {
                     await requestOtp(email);
                     setOtpSent(true);
@@ -82,7 +94,7 @@ const Login = () => {
                     setIsLoading(false);
                     return;
                 }
-                navigate('/');
+                navigate(nextPath, { replace: true });
             }
         } catch (err) {
             const msg = getApiErrorMessage(err, 'Access Denied: Invalid Credentials');
