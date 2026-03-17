@@ -44,6 +44,7 @@ import ProductionPlanning from './pages/ProductionPlanning';
 import StaticPortalPage from './pages/StaticPortalPage';
 import PurchaseRequestSystem from './pages/PurchaseRequests/PurchaseRequestSystem';
 import ApprovalEntry from './pages/PurchaseRequests/ApprovalEntry';
+import ApprovalAction from './pages/PurchaseRequests/ApprovalAction';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import RoleGuard from './components/RoleGuard';
@@ -85,6 +86,7 @@ function App() {
                         <Route path="/login" element={<Login />} />
                         <Route path="/forgot-password" element={<ForgotPassword />} />
                         <Route path="/approval-entry/:id" element={<ApprovalEntry />} />
+                        <Route path="/approval-action" element={<ApprovalAction />} />
                         <Route element={<PrivateRoute />}>
                             <Route element={<Layout />}>
                                 <Route path="/" element={<Dashboard />} />

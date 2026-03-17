@@ -88,12 +88,24 @@ const UserManagement = () => {
         e.preventDefault();
         setActionLoading(true);
         try {
-            await api.post('/users', formData);
+            const payload = {
+                ...formData,
+                approval_level: ['admin', 'manager'].includes(formData.role) ? formData.approval_level : 'NONE'
+            };
+
+            await api.post('/users', payload);
             fetchUsers();
             setShowAddModal(false);
             setFormData({ name: '', email: '', role: 'staff', approval_level: 'NONE', password: '' });
         } catch (err) {
-            alert(err.response?.data?.msg || "Failed to create user");
+            const status = err?.response?.status;
+            const backendMsg =
+                err?.response?.data?.msg ||
+                (Array.isArray(err?.response?.data?.errors) && err.response.data.errors[0]?.msg) ||
+                err?.response?.data?.message ||
+                err?.response?.data?.error ||
+                err?.message;
+            alert(`Failed to create user${status ? ` (HTTP ${status})` : ''}${backendMsg ? `: ${backendMsg}` : ''}`);
         } finally {
             setActionLoading(false);
         }
@@ -139,7 +151,13 @@ const UserManagement = () => {
             setSelectedUser(null);
             alert('User successfully deleted.');
         } catch (err) {
-            alert(err.response?.data?.msg || "Failed to delete user");
+            const status = err?.response?.status;
+            const backendMsg =
+                err?.response?.data?.msg ||
+                err?.response?.data?.message ||
+                err?.response?.data?.error ||
+                err?.message;
+            alert(`Failed to delete user${status ? ` (HTTP ${status})` : ''}${backendMsg ? `: ${backendMsg}` : ''}`);
         } finally {
             setActionLoading(false);
         }
@@ -385,7 +403,14 @@ const UserManagement = () => {
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Role</label>
                                     <select
                                         value={formData.role}
-                                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                        onChange={(e) => {
+                                            const nextRole = e.target.value;
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                role: nextRole,
+                                                approval_level: ['admin', 'manager'].includes(nextRole) ? prev.approval_level : 'NONE'
+                                            }));
+                                        }}
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-500 transition-all"
                                     >
                                         <option value="staff">Staff</option>

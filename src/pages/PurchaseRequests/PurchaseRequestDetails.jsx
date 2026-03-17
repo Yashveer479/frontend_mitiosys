@@ -30,19 +30,40 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
     }, [requestId]);
 
     const handleAction = async (action) => {
-        if (!comment.trim() && action === 'reject') {
-            alert('Please provide a comment for rejection.');
+        if (!comment.trim() && action === 'comment') {
+            alert('Please provide a comment when requesting more information.');
             return;
         }
 
         setActionLoading(true);
         try {
-            await api.post(`/requests/${requestId}/${action}`, { comment });
+            const res = await api.post(`/requests/${requestId}/${action}`, { comment });
+            const updatedRequest = res?.data;
             setComment('');
+
+            if (updatedRequest) {
+                setRequest(updatedRequest);
+            }
+
+            const nextStatus = res?.data?.status;
+            if (action === 'approve') {
+                const stageLabel = nextStatus === 'PENDING_GM_APPROVAL'
+                    ? 'Moved to GM approval.'
+                    : nextStatus === 'PENDING_DM_APPROVAL'
+                        ? 'Moved to DM approval.'
+                        : nextStatus === 'APPROVED'
+                            ? 'Request fully approved.'
+                            : 'Approval saved.';
+                alert(`Approved successfully. ${stageLabel}`);
+            } else if (action === 'reject') {
+                alert('Request rejected successfully.');
+            } else if (action === 'comment') {
+                alert('Request More Info sent successfully.');
+            }
+
             if (typeof onUpdate === 'function') {
                 await onUpdate();
             }
-            onBack();
         } catch (err) {
             console.error(`Error during ${action}:`, err);
             alert(err.response?.data?.msg || `Failed to ${action} request`);
@@ -55,16 +76,18 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
     if (!request) return <div className="py-20 text-center text-rose-500 font-bold">Request not found.</div>;
 
     const effectiveApprovalLevel =
-        user?.approval_level ||
+        String(user?.approval_level || '').toUpperCase() ||
         (typeof user?.role === 'string' && ['pm', 'gm', 'dm'].includes(user.role.toLowerCase())
             ? user.role.toUpperCase()
             : 'NONE');
 
-    const canApprove = (
-        (effectiveApprovalLevel === 'PM' && request.status === 'PENDING_PM_APPROVAL') ||
-        (effectiveApprovalLevel === 'GM' && request.status === 'PENDING_GM_APPROVAL') ||
-        (effectiveApprovalLevel === 'DM' && request.status === 'PENDING_DM_APPROVAL')
-    );
+    const canApprove = typeof request.current_user_can_approve === 'boolean'
+        ? request.current_user_can_approve
+        : (
+            (effectiveApprovalLevel === 'PM' && request.status === 'PENDING_PM_APPROVAL') ||
+            (effectiveApprovalLevel === 'GM' && request.status === 'PENDING_GM_APPROVAL') ||
+            (effectiveApprovalLevel === 'DM' && request.status === 'PENDING_DM_APPROVAL')
+        );
 
     const requiredApprovalLevel =
         request.status === 'PENDING_PM_APPROVAL' ? 'PM' :
@@ -125,14 +148,18 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
                                 request.logs.map((log, idx) => (
                                     <div key={idx} className="flex gap-4 p-4 rounded-xl border border-slate-100 bg-white relative">
                                         <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center ${
-                                            log.action === 'approve' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'
+                                            log.action === 'approve'
+                                                ? 'bg-emerald-50 text-emerald-500'
+                                                : log.action === 'comment'
+                                                    ? 'bg-blue-50 text-blue-500'
+                                                    : 'bg-rose-50 text-rose-500'
                                         }`}>
-                                            {log.action === 'approve' ? <Check size={16} /> : <X size={16} />}
+                                            {log.action === 'approve' ? <Check size={16} /> : log.action === 'comment' ? <MessageSquare size={16} /> : <X size={16} />}
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex items-center justify-between mb-1">
                                                 <p className="text-xs font-black text-slate-800 uppercase tracking-tight">
-                                                    {log.action === 'approve' ? 'Approved' : 'Rejected'} by {log.approver?.name}
+                                                    {log.action === 'approve' ? 'Approved' : log.action === 'comment' ? 'Comment Added' : 'Rejected'} by {log.approver?.name}
                                                 </p>
                                                 <span className="text-[10px] font-bold text-slate-400">{new Date(log.timestamp || log.createdAt || log.created_at).toLocaleString()}</span>
                                             </div>
@@ -161,7 +188,7 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
                             <textarea
                                 value={comment}
                                 onChange={(e) => setComment(e.target.value)}
-                                placeholder="Add a comment or justification (required for rejection)..."
+                                placeholder="Add an optional comment for approve/reject, or required note for Request More Info..."
                                 className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 mb-4 resize-none h-32"
                             ></textarea>
                             <div className="flex flex-col gap-3">
@@ -180,6 +207,14 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
                                 >
                                     <X size={18} />
                                     <span>Reject</span>
+                                </button>
+                                <button
+                                    onClick={() => handleAction('comment')}
+                                    disabled={actionLoading || !comment.trim()}
+                                    className="w-full bg-blue-50 text-blue-600 border-2 border-blue-100 font-black py-3 rounded-xl hover:bg-blue-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    <MessageSquare size={18} />
+                                    <span>Request More Info</span>
                                 </button>
                             </div>
                         </div>

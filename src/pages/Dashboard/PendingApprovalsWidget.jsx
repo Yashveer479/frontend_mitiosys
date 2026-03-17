@@ -12,7 +12,8 @@ const PendingApprovalsWidget = () => {
 
     useEffect(() => {
         const fetchPendingCount = async () => {
-            const isApprover = user?.role === 'admin' || (user?.approval_level && user?.approval_level !== 'NONE');
+            const approvalLevel = String(user?.approval_level || 'NONE').toUpperCase();
+            const isApprover = ['PM', 'GM', 'DM'].includes(approvalLevel);
             if (!isApprover) {
                 setLoading(false);
                 return;
@@ -21,17 +22,7 @@ const PendingApprovalsWidget = () => {
             try {
                 const res = await api.get('/requests');
                 const data = Array.isArray(res.data) ? res.data : [];
-                
-                let count = 0;
-                if (user.approval_level === 'PM') {
-                    count = data.filter(r => r.status === 'PENDING_PM_APPROVAL').length;
-                } else if (user.approval_level === 'GM') {
-                    count = data.filter(r => r.status === 'PENDING_GM_APPROVAL').length;
-                } else if (user.approval_level === 'DM') {
-                    count = data.filter(r => r.status === 'PENDING_DM_APPROVAL').length;
-                } else if (user.role === 'admin') {
-                    count = data.filter(r => r.status.startsWith('PENDING')).length;
-                }
+                const count = data.filter(r => r.current_user_can_approve).length;
                 
                 setPendingCount(count);
             } catch (err) {
@@ -44,7 +35,8 @@ const PendingApprovalsWidget = () => {
         fetchPendingCount();
     }, [user]);
 
-    const isApprover = user?.role === 'admin' || (user?.approval_level && user?.approval_level !== 'NONE');
+    const approvalLevel = String(user?.approval_level || 'NONE').toUpperCase();
+    const isApprover = ['PM', 'GM', 'DM'].includes(approvalLevel);
     if (loading) return null;
     if (!isApprover) return null;
 

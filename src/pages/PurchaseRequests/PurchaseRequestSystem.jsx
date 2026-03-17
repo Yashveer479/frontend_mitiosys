@@ -11,7 +11,7 @@ import PurchaseRequestDetails from './PurchaseRequestDetails';
 import { useAuth } from '../../context/AuthContext';
 
 const PurchaseRequestSystem = () => {
-    const { user, logout } = useAuth();
+    const { user, loading: authLoading, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const { id: routeRequestId } = useParams();
@@ -33,13 +33,13 @@ const PurchaseRequestSystem = () => {
     useEffect(() => {
         const enforceApproverLogin = async () => {
             if (!forceLogin) return;
+            if (authLoading) return;
 
             const currentEmail = String(user?.email || '').trim().toLowerCase();
             const mustLogin = !currentEmail;
-            const missingApproverHint = !approverEmail;
             const emailMismatch = approverEmail && currentEmail !== approverEmail;
 
-            if (mustLogin || missingApproverHint || emailMismatch) {
+            if (mustLogin || emailMismatch) {
                 try {
                     await logout();
                 } catch (_) {
@@ -54,7 +54,7 @@ const PurchaseRequestSystem = () => {
         };
 
         enforceApproverLogin();
-    }, [forceLogin, approverEmail, user?.email, logout, location.pathname, location.search, navigate]);
+    }, [forceLogin, approverEmail, user?.email, authLoading, logout, location.pathname, location.search, navigate]);
 
     const fetchRequests = async () => {
         try {
@@ -66,7 +66,7 @@ const PurchaseRequestSystem = () => {
             const pending = data.filter(r => r.status.startsWith('PENDING')).length;
             const approved = data.filter(r => r.status === 'APPROVED').length;
             const rejected = data.filter(r => r.status === 'REJECTED').length;
-            const myRequests = data.filter(r => r.requested_by === user.id).length;
+            const myRequests = data.filter(r => r.requested_by === user?.id).length;
 
             setStats({ pending, approved, rejected, myRequests });
         } catch (err) {
@@ -142,6 +142,32 @@ const PurchaseRequestSystem = () => {
     const handleRequestCreated = () => {
         fetchRequests();
         navigate('/purchase-requests');
+    };
+
+    const canDeleteRequest = (request) => {
+        if (!user || !request) return false;
+        const isAdmin = String(user.role || '').toLowerCase() === 'admin';
+        const isRequester = Number(request.requested_by) === Number(user.id);
+        return isAdmin || isRequester;
+    };
+
+    const handleDeleteRequest = async (request) => {
+        if (!request?.id) return;
+        const confirmed = window.confirm(`Delete Request #PR-${request.id}? This will permanently remove it from backend and database.`);
+        if (!confirmed) return;
+
+        try {
+            await api.delete(`/requests/${request.id}`);
+            if (selectedRequestId && Number(selectedRequestId) === Number(request.id)) {
+                navigate('/purchase-requests');
+            }
+            await fetchRequests();
+            window.alert(`Request #PR-${request.id} deleted successfully.`);
+        } catch (err) {
+            const status = err?.response?.status;
+            const backendMsg = err?.response?.data?.msg || err?.message;
+            window.alert(`Failed to delete request${status ? ` (HTTP ${status})` : ''}${backendMsg ? `: ${backendMsg}` : ''}`);
+        }
     };
 
     return (
@@ -226,7 +252,9 @@ const PurchaseRequestSystem = () => {
                         <PurchaseRequestList 
                             requests={requests} 
                             loading={loading} 
-                            onViewDetails={handleViewDetails} 
+                            onViewDetails={handleViewDetails}
+                            onDeleteRequest={handleDeleteRequest}
+                            canDeleteRequest={canDeleteRequest}
                         />
                     ) : routeRequestId === 'new' ? (
                         <PurchaseRequestForm 
