@@ -15,7 +15,12 @@ const HOP_BY_HOP_HEADERS = new Set([
     'host'
 ]);
 
+<<<<<<< HEAD
 const TARGET_BASE = (process.env.BACKEND_API_URL || 'http://13.234.45.100:5000/api').replace(/\/+$/, '');
+=======
+// const TARGET_BASE = (process.env.BACKEND_API_URL || 'http://13-205-230-226.sslip.io:5000/api').replace(/\/+$/, '');
+const TARGET_BASE = 'http://13.234.45.100:5000/api';
+>>>>>>> 7f5694f82bd616ecdded8837e4183d77ac7c6ecf
 
 export default async function handler(req: Request) {
     const incomingUrl = new URL(req.url);
