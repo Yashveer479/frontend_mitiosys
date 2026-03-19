@@ -1,15 +1,64 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, CornerDownLeft, File, Package, ShoppingCart, Users, Settings, BarChart2 } from 'lucide-react';
+import { Search, CornerDownLeft, File, Package, ShoppingCart, Users, Settings, BarChart2, Truck, Factory, SlidersHorizontal, Wrench, History, GitBranch, Warehouse, FileCheck, FilePlus, UserCog, KeyRound, ShieldCheck, Server, LogIn, HelpCircle } from 'lucide-react';
 
 const allCommands = [
-    { name: 'Dashboard', path: '/', icon: <BarChart2 size={16} /> },
-    { name: 'Products', path: '/products', icon: <Package size={16} /> },
-    { name: 'Inventory', path: '/inventory', icon: <File size={16} /> },
-    { name: 'Sales Orders', path: '/sales/orders', icon: <ShoppingCart size={16} /> },
-    { name: 'Customers', path: '/customers', icon: <Users size={16} /> },
-    { name: 'Purchase Requests', path: '/purchase-requests', icon: <File size={16} /> },
-    { name: 'Settings', path: '/settings', icon: <Settings size={16} /> },
+    // Dashboard
+    { name: 'Dashboard', path: '/', icon: <BarChart2 size={16} />, category: 'Dashboard' },
+
+    // Production
+    { name: 'Production Planning', path: '/production/planning', icon: <Factory size={16} />, category: 'Production' },
+    { name: 'Raw Entry', path: '/production/raw-entry', icon: <FilePlus size={16} />, category: 'Production' },
+    { name: 'Thickness Processing', path: '/production/thickness', icon: <SlidersHorizontal size={16} />, category: 'Production' },
+    { name: 'Sanding Processing', path: '/production/sanding', icon: <Wrench size={16} />, category: 'Production' },
+    { name: 'Grading', path: '/production/grading', icon: <FileCheck size={16} />, category: 'Production' },
+    { name: 'Production Transfer', path: '/warehouse/transfer', icon: <GitBranch size={16} />, category: 'Production' },
+    { name: 'Send to Lamination', path: '/warehouse/lamination', icon: <GitBranch size={16} />, category: 'Production' },
+    { name: 'Lamination Department', path: '/lamination/process', icon: <Factory size={16} />, category: 'Production' },
+    { name: 'Warehouse Inventory', path: '/warehouse/inventory', icon: <Warehouse size={16} />, category: 'Production' },
+
+    // Inventory
+    { name: 'Products', path: '/products', icon: <Package size={16} />, category: 'Inventory' },
+    { name: 'Inventory', path: '/inventory', icon: <File size={16} />, category: 'Inventory' },
+    { name: 'Stock Audit', path: '/inventory/audit', icon: <FileCheck size={16} />, category: 'Inventory' },
+    { name: 'Stock Adjustment', path: '/inventory/adjustment', icon: <Wrench size={16} />, category: 'Inventory' },
+    { name: 'Inventory History', path: '/inventory/history', icon: <History size={16} />, category: 'Inventory' },
+
+    // Procurement
+    { name: 'Purchase Requests', path: '/purchase-requests', icon: <File size={16} />, category: 'Procurement' },
+    { name: 'Suppliers', path: '/inventory/suppliers', icon: <Truck size={16} />, category: 'Procurement' },
+    { name: 'Purchase Orders', path: '/inventory/purchase-orders', icon: <ShoppingCart size={16} />, category: 'Procurement' },
+    { name: 'Goods Receipt', path: '/inventory/goods-receipt', icon: <Package size={16} />, category: 'Procurement' },
+
+    // Sales
+    { name: 'Sales & Orders', path: '/orders', icon: <ShoppingCart size={16} />, category: 'Sales' },
+    { name: 'Customers', path: '/customers', icon: <Users size={16} />, category: 'Sales' },
+    { name: 'Dispatch', path: '/dispatch', icon: <Truck size={16} />, category: 'Sales' },
+
+    // Logistics
+    { name: 'Logistics STO', path: '/logistics', icon: <Truck size={16} />, category: 'Logistics' },
+    { name: 'Warehouses', path: '/warehouses', icon: <Warehouse size={16} />, category: 'Logistics' },
+
+    // Reports & Analytics
+    { name: 'Analytics', path: '/analytics', icon: <BarChart2 size={16} />, category: 'Reports & Analytics' },
+    { name: 'Reports', path: '/reports', icon: <File size={16} />, category: 'Reports & Analytics' },
+
+    // Administration
+    { name: 'Users', path: '/users', icon: <Users size={16} />, category: 'Administration' },
+    { name: 'Settings', path: '/settings', icon: <Settings size={16} />, category: 'Administration' },
+
+    // Account & User
+    { name: 'Profile', path: '/profile', icon: <UserCog size={16} />, category: 'Account & User' },
+    { name: 'Change Password', path: '/change-password', icon: <KeyRound size={16} />, category: 'Account & User' },
+    { name: 'Change Email', path: '/change-email', icon: <UserCog size={16} />, category: 'Account & User' },
+
+    // Special Pages
+    { name: 'System Status', path: '/system/status', icon: <Server size={16} />, category: 'Special Pages' },
+    { name: 'Approval Action', path: '/approval-action', icon: <ShieldCheck size={16} />, category: 'Special Pages' },
+
+    // Auth
+    { name: 'Login', path: '/login', icon: <LogIn size={16} />, category: 'Authentication' },
+    { name: 'Forgot Password', path: '/forgot-password', icon: <HelpCircle size={16} />, category: 'Authentication' },
 ];
 
 const CommandPalette = ({ isOpen, onClose }) => {
