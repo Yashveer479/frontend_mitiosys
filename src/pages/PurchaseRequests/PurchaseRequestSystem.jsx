@@ -189,10 +189,12 @@ const PurchaseRequestSystem = () => {
         }
 
         if (searchTerm) {
+            const lowercasedSearchTerm = searchTerm.toLowerCase();
             filtered = filtered.filter(r =>
-                r.id.toString().includes(searchTerm) ||
-                r.items.some(item => item.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                (r.User && r.User.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                r.id.toString().includes(lowercasedSearchTerm) ||
+                (r.title && r.title.toLowerCase().includes(lowercasedSearchTerm)) ||
+                (r.description && r.description.toLowerCase().includes(lowercasedSearchTerm)) ||
+                (r.requester && r.requester.name.toLowerCase().includes(lowercasedSearchTerm))
             );
         }
 
