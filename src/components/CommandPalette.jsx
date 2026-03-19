@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Search, CornerDownLeft, File, Package, ShoppingCart, Users, Settings, BarChart2 } from 'lucide-react';
 
 const allCommands = [
-    { name: 'Dashboard', path: '/dashboard', icon: <BarChart2 size={16} /> },
+    { name: 'Dashboard', path: '/', icon: <BarChart2 size={16} /> },
     { name: 'Products', path: '/products', icon: <Package size={16} /> },
     { name: 'Inventory', path: '/inventory', icon: <File size={16} /> },
     { name: 'Sales Orders', path: '/sales/orders', icon: <ShoppingCart size={16} /> },
-    { name: 'Customers', path: '/sales/customers', icon: <Users size={16} /> },
+    { name: 'Customers', path: '/customers', icon: <Users size={16} /> },
     { name: 'Purchase Requests', path: '/purchase-requests', icon: <File size={16} /> },
     { name: 'Settings', path: '/settings', icon: <Settings size={16} /> },
 ];
