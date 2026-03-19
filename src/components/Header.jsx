@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Zap, Search, Bell, User, ArrowUpRight, ArrowDownRight, Package, Factory, ShoppingCart, CheckCheck, X, ClipboardList } from 'lucide-react';
 import { toServerUrl } from '../services/urlConfig';
 import api from '../services/api';
+import CommandPalette from './CommandPalette';
 
 const NOTIFICATION_ICONS = {
     LOW_STOCK: { icon: Package, color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-100' },
@@ -85,6 +86,7 @@ const Header = () => {
     const [unreadCount, setUnreadCount] = React.useState(0);
     const [bellOpen, setBellOpen] = React.useState(false);
     const bellRef = React.useRef(null);
+    const [isCommandPaletteOpen, setCommandPaletteOpen] = React.useState(false);
 
     const fetchNotifications = React.useCallback(async () => {
         try {
@@ -113,6 +115,17 @@ const Header = () => {
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    React.useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                setCommandPaletteOpen(true);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
     const recentNotifications = React.useMemo(() => {
@@ -162,196 +175,167 @@ const Header = () => {
     const avatarUrl = toServerUrl(user?.avatar);
 
     return (
-        <header className="fixed top-0 left-64 right-0 z-40 flex flex-col shadow-sm">
-            <div className="h-7 bg-slate-900 flex items-center overflow-hidden px-8 space-x-8 border-b border-white/5">
-                <div className="flex items-center space-x-2 shrink-0">
-                    <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Market Feed</span>
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                </div>
-                <div className="flex items-center space-x-8 animate-marquee whitespace-nowrap">
-                    <TickerItem label="MDF 18mm" value="UGX 159,375" change="+1.2%" isUp />
-                    <TickerItem label="Timber (Oak)" value="UGX 3,150,000/m3" change="-0.5%" />
-                    <TickerItem label="Fuel (Diesel)" value="UGX 4,650/L" change="+0.8%" isUp />
-                    <TickerItem label="USD/UGX" value="3,750" change="-2.1%" />
-                    <TickerItem label="EUR/UGX" value="4,080" change="+0.4%" isUp />
-                    <TickerItem label="Steel Sheet" value="UGX 4,200,000/t" change="+1.5%" isUp />
-                </div>
-            </div>
-
-            <div className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-8">
-                <div className="flex items-center space-x-6 flex-1">
-                    <div className="flex items-center space-x-3 pr-6 border-r border-slate-100">
-                        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-                            <Zap size={16} fill="white" />
-                        </div>
-                        <div className="hidden lg:block">
-                            <p className="text-[10px] font-black text-slate-900 uppercase tracking-tighter leading-none">Mitiosys</p>
-                            <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest leading-none mt-1">Digital Core</p>
-                        </div>
+        <>
+            <header className="fixed top-0 left-64 right-0 z-40 flex flex-col shadow-sm">
+                <div className="h-7 bg-slate-900 flex items-center overflow-hidden px-8 space-x-8 border-b border-white/5">
+                    <div className="flex items-center space-x-2 shrink-0">
+                        <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Market Feed</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                     </div>
-
-                    <div className="relative w-full max-w-sm group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={14} />
-                        <input
-                            type="text"
-                            placeholder="Search Command..."
-                            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 focus:bg-white transition-all"
-                        />
+                    <div className="flex items-center space-x-8 animate-marquee whitespace-nowrap">
+                        <TickerItem label="MDF 18mm" value="UGX 159,375" change="+1.2%" isUp />
+                        <TickerItem label="Timber (Oak)" value="UGX 3,150,000/m3" change="-0.5%" />
+                        <TickerItem label="Fuel (Diesel)" value="UGX 4,650/L" change="+0.8%" isUp />
+                        <TickerItem label="USD/UGX" value="3,750" change="-2.1%" />
+                        <TickerItem label="EUR/UGX" value="4,080" change="+0.4%" isUp />
+                        <TickerItem label="Steel Sheet" value="UGX 4,200,000/t" change="+1.5%" isUp />
                     </div>
                 </div>
 
-                <div className="flex items-center space-x-6">
-                    <div className="hidden xl:flex items-center space-x-4">
-                        <div className="text-right">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Global Hub</p>
-                            <p className="text-xs font-bold text-slate-800 leading-none">EAST-AFRICA-01</p>
+                <div className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-8">
+                    <div className="flex items-center space-x-6 flex-1">
+                        <div className="flex items-center space-x-3 pr-6 border-r border-slate-100">
+                            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                                <Zap size={16} fill="white" />
+                            </div>
+                            <div className="hidden lg:block">
+                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-tighter leading-none">Mitiosys</p>
+                                <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest leading-none mt-1">Digital Core</p>
+                            </div>
                         </div>
-                        <div className="w-px h-8 bg-slate-100"></div>
+
+                        <div className="relative w-full max-w-sm group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={14} />
+                            <input
+                                type="text"
+                                placeholder="Search Command... (Ctrl+K)"
+                                onFocus={() => setCommandPaletteOpen(true)}
+                                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 focus:bg-white transition-all"
+                            />
+                        </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                        <div className="relative" ref={bellRef}>
-                            <button
-                                type="button"
-                                onClick={() => setBellOpen(prev => !prev)}
-                                className="relative p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all group"
-                                aria-label="Notifications"
-                            >
-                                <Bell size={18} />
-                                {unreadCount > 0 && (
-                                    <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border border-white leading-none">
-                                        {unreadCount > 99 ? '99+' : unreadCount}
-                                    </span>
-                                )}
-                            </button>
+                    <div className="flex items-center space-x-6">
+                        <div className="hidden xl:flex items-center space-x-4">
+                            <div className="text-right">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Global Hub</p>
+                                <p className="text-xs font-bold text-slate-800 leading-none">EAST-AFRICA-01</p>
+                            </div>
+                            <div className="w-px h-8 bg-slate-100"></div>
+                        </div>
 
-                            {bellOpen && (
-                                <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden">
-                                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-                                        <div className="flex items-center space-x-2">
-                                            <Bell size={14} className="text-blue-600" />
-                                            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Notifications</span>
+                        <div className="flex items-center space-x-2">
+                            <div className="relative" ref={bellRef}>
+                                <button
+                                    type="button"
+                                    onClick={() => setBellOpen(prev => !prev)}
+                                    className="relative p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all group"
+                                    aria-label="Notifications"
+                                >
+                                    <Bell size={18} />
+                                    {unreadCount > 0 && (
+                                        <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border border-white leading-none">
+                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                        </span>
+                                    )}
+                                </button>
+
+                                {bellOpen && (
+                                    <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden">
+                                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                                            <div className="flex items-center space-x-2">
+                                                <Bell size={14} className="text-blue-600" />
+                                                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Notifications</span>
+                                                {unreadCount > 0 && (
+                                                    <span className="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">{unreadCount}</span>
+                                                )}
+                                            </div>
                                             {unreadCount > 0 && (
-                                                <span className="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">{unreadCount}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleMarkAllRead}
+                                                    className="flex items-center space-x-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                                                >
+                                                    <CheckCheck size={12} />
+                                                    <span>Mark all read</span>
+                                                </button>
                                             )}
                                         </div>
-                                        {unreadCount > 0 && (
-                                            <button
-                                                type="button"
-                                                onClick={handleMarkAllRead}
-                                                className="flex items-center space-x-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors"
-                                            >
-                                                <CheckCheck size={12} />
-                                                <span>Mark all read</span>
-                                            </button>
-                                        )}
-                                    </div>
 
-                                    <div className="max-h-80 overflow-y-auto">
-                                        {recentNotifications.length === 0 ? (
-                                            <div className="flex flex-col items-center justify-center py-10 text-slate-300">
-                                                <Bell size={28} />
-                                                <p className="text-xs font-semibold mt-2">No notifications yet</p>
-                                            </div>
-                                        ) : (
-                                            recentNotifications.map(notification => {
-                                                const config = NOTIFICATION_ICONS[notification.type] || NOTIFICATION_ICONS.ORDER_CREATED;
-                                                const Icon = config.icon;
-                                                const timestamp = new Date(notification.created_at);
-                                                const timeLabel = timestamp.toLocaleDateString() === new Date().toLocaleDateString()
-                                                    ? timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                                                    : timestamp.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                                        <div className="max-h-80 overflow-y-auto">
+                                            {recentNotifications.length === 0 ? (
+                                                <div className="flex flex-col items-center justify-center py-10 text-slate-300">
+                                                    <Bell size={28} />
+                                                    <p className="text-xs font-semibold mt-2">No notifications yet</p>
+                                                </div>
+                                            ) : (
+                                                recentNotifications.map(notification => {
+                                                    const config = NOTIFICATION_ICONS[notification.type] || NOTIFICATION_ICONS.ORDER_CREATED;
+                                                    const Icon = config.icon;
+                                                    const timestamp = new Date(notification.created_at);
+                                                    const timeLabel = timestamp.toLocaleDateString() === new Date().toLocaleDateString()
+                                                        ? timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                                        : timestamp.toLocaleDateString([], { month: 'short', day: 'numeric' });
 
-                                                return (
-                                                    <div
-                                                        key={notification.id}
-                                                        role="button"
-                                                        tabIndex={0}
-                                                        onClick={() => handleNotificationClick(notification)}
-                                                        onKeyDown={(event) => {
-                                                            if (event.key === 'Enter' || event.key === ' ') {
-                                                                event.preventDefault();
-                                                                handleNotificationClick(notification);
-                                                            }
-                                                        }}
-                                                        className={`flex items-start space-x-3 px-4 py-3 border-b border-slate-50 transition-colors text-left cursor-pointer hover:bg-slate-50 focus:outline-none focus:bg-slate-50 ${
-                                                            notification.is_read ? 'opacity-70' : 'bg-blue-50/30'
-                                                        }`}
-                                                    >
-                                                        <div className={`w-8 h-8 rounded-lg ${config.bg} ${config.border} border flex items-center justify-center shrink-0 mt-0.5`}>
-                                                            <Icon size={14} className={config.color} />
+                                                    return (
+                                                        <div
+                                                            key={notification.id}
+                                                            role="button"
+                                                            tabIndex={0}
+                                                            onClick={() => handleNotificationClick(notification)}
+                                                            onKeyDown={(event) => {
+                                                                if (event.key === 'Enter' || event.key === ' ') {
+                                                                    event.preventDefault();
+                                                                    handleNotificationClick(notification);
+                                                                }
+                                                            }}
+                                                            className={`flex items-start space-x-3 px-4 py-3 border-b border-slate-50 transition-colors text-left cursor-pointer hover:bg-slate-50 focus:outline-none focus:bg-slate-50 ${
+                                                                notification.is_read ? 'opacity-70' : 'bg-blue-50/30'
+                                                            }`}
+                                                        >
+                                                            <div className={`w-8 h-8 rounded-lg ${config.bg} ${config.border} border flex items-center justify-center shrink-0 mt-0.5`}>
+                                                                <Icon size={14} className={config.color} />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-xs font-bold text-slate-800 leading-tight truncate">{notification.title}</p>
+                                                                <p className="text-[10px] text-slate-500 mt-0.5 leading-snug line-clamp-2">{notification.message}</p>
+                                                                <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">{timeLabel}</p>
+                                                            </div>
+                                                            {!notification.is_read && !String(notification.id).startsWith('fallback-') && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        handleMarkRead(notification.id);
+                                                                    }}
+                                                                    className="shrink-0 p-1 rounded-lg hover:bg-slate-100 text-slate-300 hover:text-blue-500 transition-colors"
+                                                                    title="Mark as read"
+                                                                >
+                                                                    <X size={12} />
+                                                                </button>
+                                                            )}
                                                         </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-xs font-bold text-slate-800 leading-tight truncate">{notification.title}</p>
-                                                            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug line-clamp-2">{notification.message}</p>
-                                                            <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">{timeLabel}</p>
-                                                        </div>
-                                                        {!notification.is_read && !String(notification.id).startsWith('fallback-') && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={(event) => {
-                                                                    event.stopPropagation();
-                                                                    handleMarkRead(notification.id);
-                                                                }}
-                                                                className="shrink-0 p-1 rounded-lg hover:bg-slate-100 text-slate-300 hover:text-blue-500 transition-colors"
-                                                                title="Mark as read"
-                                                            >
-                                                                <X size={12} />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })
-                                        )}
-                                    </div>
-
-                                    {recentNotifications.length > 0 && (
-                                        <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50">
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">
-                                                Showing latest {recentNotifications.length} notifications
-                                            </p>
+                                                    );
+                                                })
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
 
-                        <button
-                            type="button"
-                            onClick={() => navigate('/profile')}
-                            className="flex items-center space-x-3 pl-4 border-l border-slate-100 cursor-pointer group text-left"
-                        >
-                            <div className="hidden sm:block">
-                                <p className="text-sm font-black text-slate-800 leading-none mb-1 group-hover:text-blue-600 transition-colors">
-                                    {user?.name || 'Loading...'}
-                                </p>
-                                <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] leading-none">
-                                    {user?.role || 'Guest'}
-                                </p>
-                            </div>
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-100 group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all shadow-sm overflow-hidden relative">
-                                {avatarUrl ? (
-                                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                                ) : (
-                                    <User size={20} />
+                                        {recentNotifications.length > 0 && (
+                                            <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50">
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                                                    Showing latest {recentNotifications.length} notifications
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             </div>
-                        </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                @keyframes marquee {
-                    0% { transform: translateX(0); }
-                    100% { transform: translateX(-50%); }
-                }
-                .animate-marquee {
-                    animation: marquee 30s linear infinite;
-                }
-            ` }} />
-        </header>
+            </header>
+            <CommandPalette isOpen={isCommandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
+        </>
     );
 };
 
