@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
     Plus, List, CheckCircle, Clock, XCircle, AlertCircle, 
     Filter, Search, ArrowRight, MessageSquare, User, Calendar
@@ -25,6 +25,8 @@ const PurchaseRequestSystem = () => {
         rejected: 0,
         myRequests: 0
     });
+    const [filter, setFilter] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
 
     const query = new URLSearchParams(location.search);
     const forceLogin = query.get('forceLogin') === '1';
@@ -133,6 +135,7 @@ const PurchaseRequestSystem = () => {
 
     const handleBackToList = () => {
         navigate('/purchase-requests');
+        setFilter('all');
     };
 
     const handleRequestUpdated = () => {
@@ -170,6 +173,32 @@ const PurchaseRequestSystem = () => {
         }
     };
 
+    const filteredRequests = useMemo(() => {
+        let filtered = requests;
+
+        if (filter !== 'all') {
+            if (filter === 'pending') {
+                filtered = requests.filter(r => r.status.startsWith('PENDING'));
+            } else if (filter === 'approved') {
+                filtered = requests.filter(r => r.status === 'APPROVED');
+            } else if (filter === 'rejected') {
+                filtered = requests.filter(r => r.status === 'REJECTED');
+            } else if (filter === 'my-submissions') {
+                filtered = requests.filter(r => r.requested_by === user?.id);
+            }
+        }
+
+        if (searchTerm) {
+            filtered = filtered.filter(r =>
+                r.id.toString().includes(searchTerm) ||
+                r.items.some(item => item.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (r.User && r.User.name.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+        }
+
+        return filtered;
+    }, [requests, filter, searchTerm, user?.id]);
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header Section */}
@@ -196,29 +225,56 @@ const PurchaseRequestSystem = () => {
                     value={stats.pending} 
                     icon={Clock} 
                     color="text-amber-500" 
-                    bg="bg-amber-50" 
+                    bg="bg-amber-50"
+                    onClick={() => setFilter('pending')}
                 />
                 <StatCard 
                     label="Approved Requests" 
                     value={stats.approved} 
                     icon={CheckCircle} 
                     color="text-emerald-500" 
-                    bg="bg-emerald-50" 
+                    bg="bg-emerald-50"
+                    onClick={() => setFilter('approved')}
                 />
                 <StatCard 
                     label="Rejected" 
                     value={stats.rejected} 
                     icon={XCircle} 
                     color="text-rose-500" 
-                    bg="bg-rose-50" 
+                    bg="bg-rose-50"
+                    onClick={() => setFilter('rejected')}
                 />
                 <StatCard 
                     label="My Submissions" 
                     value={stats.myRequests} 
                     icon={User} 
                     color="text-blue-500" 
-                    bg="bg-blue-50" 
+                    bg="bg-blue-50"
+                    onClick={() => setFilter('my-submissions')}
                 />
+            </div>
+
+            {/* Filter and Search Section */}
+            <div className="px-6 pt-4 pb-2">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="relative flex-1">
+                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search by ID, item, or requester..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <button 
+                        onClick={() => { setFilter('all'); setSearchTerm(''); }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    >
+                        <Filter size={16} />
+                        <span>Clear</span>
+                    </button>
+                </div>
             </div>
 
             {/* Main Content Area */}
@@ -229,7 +285,7 @@ const PurchaseRequestSystem = () => {
                         active={!routeRequestId} 
                         onClick={handleBackToList} 
                         label="All Requests" 
-                        count={requests.length}
+                        count={filteredRequests.length}
                     />
                     {routeRequestId && routeRequestId !== 'new' && (
                         <TabButton 
@@ -250,7 +306,7 @@ const PurchaseRequestSystem = () => {
                 <div className="p-6">
                     {!routeRequestId ? (
                         <PurchaseRequestList 
-                            requests={requests} 
+                            requests={filteredRequests} 
                             loading={loading} 
                             onViewDetails={handleViewDetails}
                             onDeleteRequest={handleDeleteRequest}
@@ -275,8 +331,11 @@ const PurchaseRequestSystem = () => {
     );
 };
 
-const StatCard = ({ label, value, icon: Icon, color, bg }) => (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+const StatCard = ({ label, value, icon: Icon, color, bg, onClick }) => (
+    <div 
+        onClick={onClick}
+        className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 transition-all hover:border-blue-500 hover:shadow-md cursor-pointer"
+    >
         <div className={`w-12 h-12 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
             <Icon size={24} className={color} />
         </div>
