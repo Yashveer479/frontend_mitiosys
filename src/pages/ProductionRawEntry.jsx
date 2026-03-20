@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 
 const normalizeBatch = (input) => {
@@ -32,6 +32,8 @@ const ProductionRawEntry = () => {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
 
     const fetchBatches = async () => {
         try {
@@ -79,6 +81,17 @@ const ProductionRawEntry = () => {
             setSubmitting(false);
         }
     };
+
+    const filteredBatches = useMemo(() => {
+        const query = searchTerm.trim().toLowerCase();
+        return batches.filter((batch) => {
+            const status = String(batch.status || '').toUpperCase();
+            const batchNumber = String(batch.batch_number || '').toLowerCase();
+            const matchesSearch = !query || batchNumber.includes(query);
+            const matchesStatus = statusFilter === 'ALL' || status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+    }, [batches, searchTerm, statusFilter]);
 
     return (
         <div className="space-y-8">
@@ -154,12 +167,35 @@ const ProductionRawEntry = () => {
                 <div className="px-6 py-4 border-b border-slate-100">
                     <h2 className="text-lg font-semibold text-slate-800">Raw Board Batches</h2>
                     <p className="text-xs text-slate-400 mt-0.5">Stage: RAW — next stage: Thickness Processing</p>
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Search by batch number"
+                            className="md:col-span-2 w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                        />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                        >
+                            <option value="ALL">All statuses</option>
+                            <option value="RAW">RAW</option>
+                            <option value="THICKNESS_PROCESSED">THICKNESS_PROCESSED</option>
+                            <option value="SANDING_PROCESSED">SANDING_PROCESSED</option>
+                            <option value="GRADED">GRADED</option>
+                            <option value="WAREHOUSE_STORED">WAREHOUSE_STORED</option>
+                        </select>
+                    </div>
                 </div>
 
                 {loading ? (
                     <div className="px-6 py-10 text-center text-slate-400 text-sm">Loading batches…</div>
                 ) : batches.length === 0 ? (
                     <div className="px-6 py-10 text-center text-slate-400 text-sm">No batches yet. Create the first one above.</div>
+                ) : filteredBatches.length === 0 ? (
+                    <div className="px-6 py-10 text-center text-slate-400 text-sm">No batches matched your search/filter.</div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -173,7 +209,7 @@ const ProductionRawEntry = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {batches.map(b => (
+                                {filteredBatches.map(b => (
                                     <tr key={b.id ?? `${b.batch_number}-${b.created_at ?? 'no-date'}`} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-3 font-medium text-slate-800">{b.batch_number}</td>
                                         <td className="px-6 py-3 text-right text-slate-600">{b.raw_quantity}</td>

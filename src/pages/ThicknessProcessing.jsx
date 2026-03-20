@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 
 const ThicknessProcessing = () => {
     const [batches, setBatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [thicknessFilter, setThicknessFilter] = useState('ALL');
 
     // Modal state
     const [modalBatch, setModalBatch] = useState(null);
@@ -70,6 +72,20 @@ const ThicknessProcessing = () => {
         }
     };
 
+    const filteredBatches = useMemo(() => {
+        const query = searchTerm.trim().toLowerCase();
+        return batches.filter((batch) => {
+            const hasThickness = batch.thickness != null && batch.thickness !== '';
+            const matchesSearch = !query || String(batch.batch_number || '').toLowerCase().includes(query);
+            const matchesThickness =
+                thicknessFilter === 'ALL' ||
+                (thicknessFilter === 'WITH_THICKNESS' && hasThickness) ||
+                (thicknessFilter === 'WITHOUT_THICKNESS' && !hasThickness);
+
+            return matchesSearch && matchesThickness;
+        });
+    }, [batches, searchTerm, thicknessFilter]);
+
     return (
         <div className="space-y-8">
             {/* Page Header */}
@@ -83,6 +99,24 @@ const ThicknessProcessing = () => {
                 <div className="px-6 py-4 border-b border-slate-100">
                     <h2 className="text-lg font-semibold text-slate-800">RAW Batches Awaiting Thickness Processing</h2>
                     <p className="text-xs text-slate-400 mt-0.5">Stage: RAW → next stage: Sanding</p>
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Search by batch number"
+                            className="md:col-span-2 w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                        />
+                        <select
+                            value={thicknessFilter}
+                            onChange={(e) => setThicknessFilter(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                        >
+                            <option value="ALL">All thickness states</option>
+                            <option value="WITH_THICKNESS">With thickness value</option>
+                            <option value="WITHOUT_THICKNESS">Missing thickness value</option>
+                        </select>
+                    </div>
                 </div>
 
                 {loading ? (
@@ -92,6 +126,10 @@ const ThicknessProcessing = () => {
                 ) : batches.length === 0 ? (
                     <div className="px-6 py-10 text-center text-slate-400 text-sm">
                         No RAW batches available. All batches have been processed or no batches exist yet.
+                    </div>
+                ) : filteredBatches.length === 0 ? (
+                    <div className="px-6 py-10 text-center text-slate-400 text-sm">
+                        No RAW batches matched your search/filter.
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -107,7 +145,7 @@ const ThicknessProcessing = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {batches.map(b => (
+                                {filteredBatches.map(b => (
                                     <tr key={b.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-3 font-medium text-slate-800">{b.batch_number}</td>
                                         <td className="px-6 py-3 text-right text-slate-600">{b.raw_quantity}</td>

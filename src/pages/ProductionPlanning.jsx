@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import {
     CalendarDays,
@@ -61,6 +61,8 @@ const ProductionPlanning = () => {
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
     const [updatingId, setUpdatingId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
 
     const fetchPlans = async () => {
         setFetching(true);
@@ -133,6 +135,20 @@ const ProductionPlanning = () => {
         inProgress: plans.filter(p => p.status === 'IN_PROGRESS').length,
         completed: plans.filter(p => p.status === 'COMPLETED').length,
     };
+
+    const filteredPlans = useMemo(() => {
+        const query = searchTerm.trim().toLowerCase();
+        return plans.filter((plan) => {
+            const status = String(plan.status || '').toUpperCase();
+            const matchesSearch =
+                !query ||
+                String(plan.product_type || '').toLowerCase().includes(query) ||
+                String(plan.machine || '').toLowerCase().includes(query) ||
+                String(plan.plan_date || '').toLowerCase().includes(query);
+            const matchesStatus = statusFilter === 'ALL' || status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+    }, [plans, searchTerm, statusFilter]);
 
     return (
         <div className="space-y-8">
@@ -293,6 +309,25 @@ const ProductionPlanning = () => {
                                 <RefreshCw size={15} className={fetching ? 'animate-spin' : ''} />
                             </button>
                         </div>
+                        <div className="px-6 py-4 border-b border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Search by product, machine, or date"
+                                className="md:col-span-2 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            />
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            >
+                                <option value="ALL">All statuses</option>
+                                {STATUSES.map((status) => (
+                                    <option key={status} value={status}>{STATUS_STYLES[status].label}</option>
+                                ))}
+                            </select>
+                        </div>
 
                         {fetching ? (
                             <div className="py-16 text-center text-slate-400 text-sm">Loading plans…</div>
@@ -301,6 +336,8 @@ const ProductionPlanning = () => {
                                 <Factory size={36} className="text-slate-200" />
                                 <span className="text-sm font-medium">No production plans yet</span>
                             </div>
+                        ) : filteredPlans.length === 0 ? (
+                            <div className="py-16 text-center text-slate-400 text-sm">No plans matched your search/filter.</div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
@@ -314,7 +351,7 @@ const ProductionPlanning = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
-                                        {plans.map(plan => (
+                                        {filteredPlans.map(plan => (
                                             <tr key={plan.id} className="hover:bg-slate-50/60 transition-colors">
                                                 <td className="px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">
                                                     {formatDate(plan.plan_date)}
@@ -348,7 +385,7 @@ const ProductionPlanning = () => {
                                     </tbody>
                                 </table>
                                 <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 text-xs text-slate-400 font-medium">
-                                    {plans.length} plan{plans.length !== 1 ? 's' : ''} total
+                                    Showing {filteredPlans.length} of {plans.length} plan{plans.length !== 1 ? 's' : ''}
                                 </div>
                             </div>
                         )}

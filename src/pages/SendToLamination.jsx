@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 
 const BOARD_TYPES = ['AG', 'LAM', 'RS', 'BLAM', 'BG', 'CG'];
@@ -11,6 +11,8 @@ export default function SendToLamination() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [historySearch, setHistorySearch] = useState('');
+    const [historyTypeFilter, setHistoryTypeFilter] = useState('ALL');
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -53,6 +55,19 @@ export default function SendToLamination() {
             setSubmitting(false);
         }
     };
+
+    const filteredHistory = useMemo(() => {
+        const query = historySearch.trim().toLowerCase();
+        return history.filter((entry) => {
+            const boardType = String(entry.board_type || '').toUpperCase();
+            const matchesSearch =
+                !query ||
+                boardType.toLowerCase().includes(query) ||
+                String(entry.id || '').toLowerCase().includes(query);
+            const matchesType = historyTypeFilter === 'ALL' || boardType === historyTypeFilter;
+            return matchesSearch && matchesType;
+        });
+    }, [history, historySearch, historyTypeFilter]);
 
     return (
         <div className="p-6 max-w-4xl mx-auto space-y-8">
@@ -130,10 +145,31 @@ export default function SendToLamination() {
             {/* TRANSFER HISTORY */}
             <section>
                 <h2 className="text-lg font-semibold text-gray-700 mb-3">Transfer History</h2>
+                <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input
+                        type="text"
+                        value={historySearch}
+                        onChange={(e) => setHistorySearch(e.target.value)}
+                        placeholder="Search by board type or transfer id"
+                        className="md:col-span-2 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500"
+                    />
+                    <select
+                        value={historyTypeFilter}
+                        onChange={(e) => setHistoryTypeFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500"
+                    >
+                        <option value="ALL">All board types</option>
+                        {BOARD_TYPES.map((type) => (
+                            <option key={type} value={type}>{type}</option>
+                        ))}
+                    </select>
+                </div>
                 {loading ? (
                     <p className="text-gray-500">Loading…</p>
                 ) : history.length === 0 ? (
                     <p className="text-gray-500 italic">No transfers yet.</p>
+                ) : filteredHistory.length === 0 ? (
+                    <p className="text-gray-500 italic">No transfer history matched your search/filter.</p>
                 ) : (
                     <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
                         <table className="min-w-full text-sm text-left">
@@ -146,7 +182,7 @@ export default function SendToLamination() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
-                                {history.map(h => (
+                                {filteredHistory.map(h => (
                                     <tr key={h.id} className="hover:bg-gray-50">
                                         <td className="px-4 py-3 text-gray-500">{h.id}</td>
                                         <td className="px-4 py-3 font-medium text-gray-800">
