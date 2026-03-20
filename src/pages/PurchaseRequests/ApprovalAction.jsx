@@ -48,10 +48,10 @@ const ApprovalAction = () => {
         }
     }, [token]);
 
-    const submitAction = useCallback(async (action) => {
+    const submitAction = useCallback(async (action, { force = false } = {}) => {
         if (!token) return;
 
-        if (!preview?.canAct) {
+        if (!force && !preview?.canAct) {
             const level = String(preview?.approvalLevel || '').toUpperCase();
             const expected = prettyStatus(preview?.expectedStatus);
             const current = prettyStatus(preview?.currentStatus || preview?.request?.status);
@@ -101,7 +101,7 @@ const ApprovalAction = () => {
     }, [loadPreview, openMode, attachmentUrl]);
 
     useEffect(() => {
-        if (!preview || !actionFromUrl || autoActionDone || !preview.canAct) {
+        if (!preview || !actionFromUrl || autoActionDone) {
             return;
         }
 
@@ -111,7 +111,7 @@ const ApprovalAction = () => {
         }
 
         setAutoActionDone(true);
-        submitAction(actionFromUrl);
+        submitAction(actionFromUrl, { force: true });
     }, [actionFromUrl, autoActionDone, preview, submitAction]);
 
     if (loading) {
