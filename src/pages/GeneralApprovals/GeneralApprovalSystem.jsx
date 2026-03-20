@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { 
     Plus, Paperclip, Clock, CheckCircle, XCircle, Send, AlertCircle, Search,
-    History, MessageSquare, Check, X, ArrowLeft, ArrowRight, User, Layers, Calendar
+    History, MessageSquare, Check, X, ArrowLeft, ArrowRight, User, Layers, Calendar, Trash2, Upload
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
@@ -100,6 +100,21 @@ const GeneralApprovalSystem = () => {
         }
     };
 
+    const handleDelete = async (id) => {
+        if (!confirm('Are you sure you want to delete this approval request? This action cannot be undone.')) return;
+        
+        try {
+            await api.delete(`/general-approvals/${id}`);
+            if (showDetails) {
+                 navigate('/general-approvals');
+            } else {
+                 fetchItems();
+            }
+        } catch (err) {
+            alert(err?.response?.data?.msg || 'Failed to delete request');
+        }
+    };
+
     useEffect(() => {
         fetchItems();
     }, [user?.id]);
@@ -144,8 +159,8 @@ const GeneralApprovalSystem = () => {
             setSubmitting(true);
             const payload = new FormData();
             payload.append('title', form.title);
-            payload.append('description', form.description);
-            payload.append('department', form.department);
+            if(form.description) payload.append('description', form.description);
+            if(form.department) payload.append('department', form.department);
             payload.append('first_level', form.first_level);
             payload.append('second_level', form.second_level);
             payload.append('third_level', form.third_level);
@@ -194,9 +209,20 @@ const GeneralApprovalSystem = () => {
                         <ArrowLeft size={16} />
                         <span>Back to List</span>
                     </button>
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GA ID:</span>
-                        <span className="font-mono text-sm font-black text-blue-600">#GA-{detailedRequest.id}</span>
+                    <div className="flex items-center gap-4">
+                        {(user?.role === 'admin' || Number(user?.id) === Number(detailedRequest.requested_by)) && (
+                            <button
+                                onClick={() => handleDelete(detailedRequest.id)}
+                                className="flex items-center gap-2 text-rose-500 hover:text-rose-700 font-bold text-xs uppercase tracking-widest transition-all border border-rose-200 hover:bg-rose-50 px-3 py-1.5 rounded-lg"
+                            >
+                                <Trash2 size={14} />
+                                <span>Delete</span>
+                            </button>
+                        )}
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GA ID:</span>
+                            <span className="font-mono text-sm font-black text-blue-600">#GA-{detailedRequest.id}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -445,7 +471,7 @@ const GeneralApprovalSystem = () => {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-black text-slate-500 uppercase mb-2">Department</label>
+                        <label className="block text-xs font-black text-slate-500 uppercase mb-2">Department (Optional)</label>
                         <input
                             type="text"
                             value={form.department}
@@ -456,7 +482,7 @@ const GeneralApprovalSystem = () => {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-black text-slate-500 uppercase mb-2">Description</label>
+                        <label className="block text-xs font-black text-slate-500 uppercase mb-2">Description / Justification (Optional)</label>
                         <textarea
                             rows={4}
                             value={form.description}
@@ -468,12 +494,42 @@ const GeneralApprovalSystem = () => {
 
                     <div>
                         <label className="block text-xs font-black text-slate-500 uppercase mb-2">Attachment (PDF/Excel)</label>
-                        <input
-                            type="file"
-                            accept=".pdf,.xls,.xlsx,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50"
-                        />
+                        <div className="relative group">
+                            <input
+                                type="file"
+                                id="file-upload"
+                                accept=".pdf,.xls,.xlsx,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                                className="hidden"
+                            />
+                            <label 
+                                htmlFor="file-upload"
+                                className={`flex flex-col items-center justify-center w-full px-4 py-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                                    attachment ? 'border-emerald-300 bg-emerald-50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-blue-400'
+                                }`}
+                            >
+                                {attachment ? (
+                                    <>
+                                        <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
+                                            <Check size={24} />
+                                        </div>
+                                        <p className="text-sm font-bold text-emerald-700">{attachment.name}</p>
+                                        <p className="text-xs text-emerald-600 mt-1">{(attachment.size / 1024 / 1024).toFixed(2)} MB</p>
+                                        <span className="mt-4 px-3 py-1 bg-white rounded-full text-xs font-bold text-emerald-600 shadow-sm">
+                                            Click to change file
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                            <Upload size={24} />
+                                        </div>
+                                        <p className="text-sm font-bold text-slate-600">Click to upload or drag file here</p>
+                                        <p className="text-xs text-slate-400 mt-1">PDF, Excel (Max 10MB)</p>
+                                    </>
+                                )}
+                            </label>
+                        </div>
                     </div>
 
                     <div className="flex gap-3">
@@ -524,6 +580,7 @@ const GeneralApprovalSystem = () => {
                                         <th className="px-4 py-3 text-xs text-slate-500">Status</th>
                                         <th className="px-4 py-3 text-xs text-slate-500">Attachment</th>
                                         <th className="px-4 py-3 text-xs text-slate-500">Date</th>
+                                        <th className="px-4 py-3 text-xs text-slate-500 text-right">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -556,6 +613,20 @@ const GeneralApprovalSystem = () => {
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-slate-600">{new Date(entry.createdAt || entry.created_at).toLocaleDateString()}</td>
+                                            <td className="px-4 py-3 text-right">
+                                                {(user?.role === 'admin' || Number(user?.id) === Number(entry.requested_by)) && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDelete(entry.id);
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-block"
+                                                        title="Delete Request"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
