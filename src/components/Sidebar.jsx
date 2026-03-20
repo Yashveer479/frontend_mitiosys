@@ -53,9 +53,10 @@ const groups = [
         label: 'Procurement',
         icon: ShoppingBag,
         color: 'text-amber-400',
-        paths: ['/inventory/suppliers', '/inventory/purchase-orders', '/inventory/goods-receipt'],
+        paths: ['/purchase-requests', '/general-approvals', '/inventory/suppliers', '/inventory/purchase-orders', '/inventory/goods-receipt'],
         items: [
             { name: 'Purchase Requests', path: '/purchase-requests', icon: ClipboardList },
+            { name: 'General Approval', path: '/general-approvals', icon: ClipboardCheck },
             { name: 'Suppliers', path: '/inventory/suppliers', icon: Truck },
             { name: 'Purchase Orders', path: '/inventory/purchase-orders', icon: ReceiptText },
             { name: 'Goods Receipt', path: '/inventory/goods-receipt', icon: ClipboardList },

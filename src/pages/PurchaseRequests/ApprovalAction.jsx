@@ -14,6 +14,8 @@ const ApprovalAction = () => {
     const [searchParams] = useSearchParams();
     const token = useMemo(() => String(searchParams.get('token') || '').trim(), [searchParams]);
     const openMode = useMemo(() => String(searchParams.get('open') || '').trim().toLowerCase(), [searchParams]);
+    const moduleType = useMemo(() => String(searchParams.get('module') || '').trim().toLowerCase(), [searchParams]);
+    const isGeneralApproval = moduleType === 'general';
     const actionFromUrl = useMemo(() => {
         const value = String(searchParams.get('action') || '').trim().toLowerCase();
         return ['approve', 'reject'].includes(value) ? value : '';
@@ -36,7 +38,7 @@ const ApprovalAction = () => {
 
         try {
             setLoading(true);
-            const response = await axios.get(`${API_BASE_URL}/requests/public/preview`, {
+            const response = await axios.get(`${API_BASE_URL}${isGeneralApproval ? '/general-approvals' : '/requests'}/public/preview`, {
                 params: { token }
             });
             setPreview(response.data);
@@ -46,7 +48,7 @@ const ApprovalAction = () => {
         } finally {
             setLoading(false);
         }
-    }, [token]);
+    }, [token, isGeneralApproval]);
 
     const submitAction = useCallback(async (action, { force = false } = {}) => {
         if (!token) return;
@@ -69,7 +71,7 @@ const ApprovalAction = () => {
             setError('');
             setSuccess('');
 
-            const response = await axios.post(`${API_BASE_URL}/requests/public/act`, {
+            const response = await axios.post(`${API_BASE_URL}${isGeneralApproval ? '/general-approvals' : '/requests'}/public/act`, {
                 token,
                 action,
                 comment: comment.trim() || null
@@ -87,12 +89,14 @@ const ApprovalAction = () => {
         } finally {
             setSubmitting(false);
         }
-    }, [comment, token]);
+    }, [comment, token, isGeneralApproval]);
 
-    const attachmentUrl = token ? `${API_BASE_URL}/requests/public/attachment?token=${encodeURIComponent(token)}&forwarded=1` : null;
+    const attachmentUrl = token
+        ? `${API_BASE_URL}${isGeneralApproval ? '/general-approvals' : '/requests'}/public/attachment?token=${encodeURIComponent(token)}&forwarded=1`
+        : null;
 
     useEffect(() => {
-        if (openMode === 'pdf' && attachmentUrl) {
+        if ((openMode === 'pdf' || openMode === 'file') && attachmentUrl) {
             window.location.replace(attachmentUrl);
             return;
         }
@@ -125,15 +129,15 @@ const ApprovalAction = () => {
     const currentStatus = prettyStatus(preview?.currentStatus || request?.status);
     const isRejectFlow = actionFromUrl === 'reject';
 
-    if (openMode === 'pdf') {
-        return <div className="min-h-screen grid place-items-center text-slate-600 font-semibold">Opening attachment PDF...</div>;
+    if (openMode === 'pdf' || openMode === 'file') {
+        return <div className="min-h-screen grid place-items-center text-slate-600 font-semibold">Opening attachment...</div>;
     }
 
     return (
         <div className="min-h-screen bg-slate-100 px-4 py-8">
             <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
                 <div className="px-6 py-5 border-b border-slate-200 bg-slate-50">
-                    <h1 className="text-2xl font-bold text-slate-800">Purchase Request Approval</h1>
+                    <h1 className="text-2xl font-bold text-slate-800">{isGeneralApproval ? 'General Approval' : 'Purchase Request Approval'}</h1>
                     <p className="text-sm text-slate-600 mt-1">Secure mail-link workflow. No login is required for this action.</p>
                 </div>
 
@@ -144,18 +148,19 @@ const ApprovalAction = () => {
                     {request && (
                         <>
                             <div className="grid sm:grid-cols-2 gap-4 text-sm">
-                                <div><span className="font-semibold text-slate-700">Request ID:</span> PR-{request.id}</div>
+                                <div><span className="font-semibold text-slate-700">Request ID:</span> {isGeneralApproval ? `GA-${request.id}` : `PR-${request.id}`}</div>
                                 <div><span className="font-semibold text-slate-700">Status:</span> {prettyStatus(request.status)}</div>
                                 <div><span className="font-semibold text-slate-700">Title:</span> {request.title}</div>
-                                <div><span className="font-semibold text-slate-700">Type:</span> {request.request_type}</div>
-                                <div><span className="font-semibold text-slate-700">Quantity:</span> {request.quantity}</div>
-                                <div><span className="font-semibold text-slate-700">Priority:</span> {request.priority || 'Medium'}</div>
+                                {!isGeneralApproval && <div><span className="font-semibold text-slate-700">Type:</span> {request.request_type}</div>}
+                                {!isGeneralApproval && <div><span className="font-semibold text-slate-700">Quantity:</span> {request.quantity}</div>}
+                                {!isGeneralApproval && <div><span className="font-semibold text-slate-700">Priority:</span> {request.priority || 'Medium'}</div>}
+                                {isGeneralApproval && <div><span className="font-semibold text-slate-700">Flow:</span> {request.first_level} {'->'} {request.second_level} {'->'} {request.third_level}</div>}
                             </div>
 
                             {request.attachment && (
                                 <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
                                     <p className="text-sm font-semibold text-slate-700">
-                                        Attached PDF: <span className="font-bold">{request.attachment.original_name || 'request.pdf'}</span>
+                                        Attachment: <span className="font-bold">{request.attachment.original_name || 'request-file'}</span>
                                     </p>
                                     <a
                                         href={attachmentUrl}
@@ -163,7 +168,7 @@ const ApprovalAction = () => {
                                         rel="noopener noreferrer"
                                         className="inline-block mt-2 text-sm font-semibold text-blue-700 hover:text-blue-800 underline"
                                     >
-                                        Open PDF document
+                                        Open file
                                     </a>
                                 </div>
                             )}

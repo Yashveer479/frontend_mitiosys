@@ -45,6 +45,7 @@ import StaticPortalPage from './pages/StaticPortalPage';
 import PurchaseRequestSystem from './pages/PurchaseRequests/PurchaseRequestSystem';
 import ApprovalEntry from './pages/PurchaseRequests/ApprovalEntry';
 import ApprovalAction from './pages/PurchaseRequests/ApprovalAction';
+import GeneralApprovalSystem from './pages/GeneralApprovals/GeneralApprovalSystem';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import RoleGuard from './components/RoleGuard';
@@ -137,6 +138,8 @@ function App() {
                                 <Route path="/inventory/adjustment" element={<StockAdjustment />} />
                                 <Route path="/purchase-requests" element={<PurchaseRequestSystem />} />
                                 <Route path="/purchase-requests/:id" element={<PurchaseRequestSystem />} />
+                                <Route path="/general-approvals" element={<GeneralApprovalSystem />} />
+                                <Route path="/general-approvals/:id" element={<GeneralApprovalSystem />} />
                             </Route>
                         </Route>
                     </Routes>
