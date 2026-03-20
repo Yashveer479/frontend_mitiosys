@@ -13,6 +13,7 @@ const prettyStatus = (value) => String(value || '').replaceAll('_', ' ').trim();
 const ApprovalAction = () => {
     const [searchParams] = useSearchParams();
     const token = useMemo(() => String(searchParams.get('token') || '').trim(), [searchParams]);
+    const view = useMemo(() => String(searchParams.get('view') || '').trim().toLowerCase(), [searchParams]);
     const actionFromUrl = useMemo(() => {
         const value = String(searchParams.get('action') || '').trim().toLowerCase();
         return ['approve', 'reject'].includes(value) ? value : '';
@@ -58,6 +59,11 @@ const ApprovalAction = () => {
             return;
         }
 
+        if (action === 'reject' && !comment.trim()) {
+            setError('Rejection reason is required. Please add a comment before rejecting.');
+            return;
+        }
+
         try {
             setSubmitting(true);
             setError('');
@@ -92,6 +98,11 @@ const ApprovalAction = () => {
             return;
         }
 
+        // Only approve is auto-executed from an email quick-action link.
+        if (actionFromUrl !== 'approve') {
+            return;
+        }
+
         setAutoActionDone(true);
         submitAction(actionFromUrl);
     }, [actionFromUrl, autoActionDone, preview, submitAction]);
@@ -106,6 +117,8 @@ const ApprovalAction = () => {
     const expectedStatus = prettyStatus(preview?.expectedStatus);
     const currentStatus = prettyStatus(preview?.currentStatus || request?.status);
     const attachmentUrl = token ? `${API_BASE_URL}/requests/public/attachment?token=${encodeURIComponent(token)}` : null;
+    const isRejectFlow = actionFromUrl === 'reject';
+    const showAttachmentPreview = Boolean(attachmentUrl && request?.attachment && (view === 'attachment' || isRejectFlow || !actionFromUrl));
 
     return (
         <div className="min-h-screen bg-slate-100 px-4 py-8">
@@ -143,30 +156,43 @@ const ApprovalAction = () => {
                                     >
                                         Open PDF document
                                     </a>
+                                    {showAttachmentPreview && (
+                                        <div className="mt-3 rounded-lg border border-slate-200 overflow-hidden bg-white">
+                                            <iframe
+                                                title="Purchase request attachment preview"
+                                                src={attachmentUrl}
+                                                className="w-full h-[70vh]"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Comment (optional)</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                    {isRejectFlow ? 'Rejection reason (required)' : 'Comment (optional)'}
+                                </label>
                                 <textarea
                                     rows={4}
                                     value={comment}
                                     onChange={(e) => setComment(e.target.value)}
                                     disabled={submitting}
                                     className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                                    placeholder="Add a note for audit trail"
+                                    placeholder={isRejectFlow ? 'Add a clear reason for rejection' : 'Add a note for audit trail'}
                                 />
                             </div>
 
                             <div className="flex flex-wrap gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => submitAction('approve')}
-                                    disabled={submitting}
-                                    className={`px-4 py-2 rounded-lg font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 ${!canAct ? 'opacity-60' : ''}`}
-                                >
-                                    {submitting && actionFromUrl === 'approve' ? 'Processing...' : actionLabel.approve}
-                                </button>
+                                {!isRejectFlow && (
+                                    <button
+                                        type="button"
+                                        onClick={() => submitAction('approve')}
+                                        disabled={submitting}
+                                        className={`px-4 py-2 rounded-lg font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 ${!canAct ? 'opacity-60' : ''}`}
+                                    >
+                                        {submitting && actionFromUrl === 'approve' ? 'Processing...' : actionLabel.approve}
+                                    </button>
+                                )}
                                 <button
                                     type="button"
                                     onClick={() => submitAction('reject')}
