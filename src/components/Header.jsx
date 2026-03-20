@@ -224,6 +224,29 @@ const Header = () => {
                             <div className="w-px h-8 bg-slate-100"></div>
                         </div>
 
+                        <button
+                            type="button"
+                            onClick={() => navigate('/profile')}
+                            className="hidden md:flex items-center space-x-3 pl-2 pr-1.5 py-1.5 rounded-2xl border border-slate-100 bg-white hover:bg-slate-50 transition-all"
+                            aria-label="Open profile"
+                        >
+                            <div className="text-left leading-none">
+                                <p className="text-[10px] font-black text-slate-800 uppercase tracking-tight truncate max-w-[92px]">
+                                    {user?.name || 'User'}
+                                </p>
+                                <p className="text-[9px] font-black text-blue-600 uppercase tracking-[0.2em] mt-1">
+                                    {String(user?.role || 'staff')}
+                                </p>
+                            </div>
+                            <div className="w-10 h-10 rounded-2xl border border-slate-200 bg-slate-50 shadow-sm overflow-hidden grid place-items-center text-slate-400">
+                                {avatarUrl ? (
+                                    <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    <User size={18} />
+                                )}
+                            </div>
+                        </button>
+
                         <div className="flex items-center space-x-2">
                             <div className="relative" ref={bellRef}>
                                 <button
