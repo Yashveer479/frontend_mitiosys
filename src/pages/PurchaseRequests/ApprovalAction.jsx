@@ -13,6 +13,7 @@ const prettyStatus = (value) => String(value || '').replaceAll('_', ' ').trim();
 const ApprovalAction = () => {
     const [searchParams] = useSearchParams();
     const token = useMemo(() => String(searchParams.get('token') || '').trim(), [searchParams]);
+    const openMode = useMemo(() => String(searchParams.get('open') || '').trim().toLowerCase(), [searchParams]);
     const actionFromUrl = useMemo(() => {
         const value = String(searchParams.get('action') || '').trim().toLowerCase();
         return ['approve', 'reject'].includes(value) ? value : '';
@@ -88,9 +89,16 @@ const ApprovalAction = () => {
         }
     }, [comment, token]);
 
+    const attachmentUrl = token ? `${API_BASE_URL}/requests/public/attachment?token=${encodeURIComponent(token)}` : null;
+
     useEffect(() => {
+        if (openMode === 'pdf' && attachmentUrl) {
+            window.location.replace(attachmentUrl);
+            return;
+        }
+
         loadPreview();
-    }, [loadPreview]);
+    }, [loadPreview, openMode, attachmentUrl]);
 
     useEffect(() => {
         if (!preview || !actionFromUrl || autoActionDone || !preview.canAct) {
@@ -115,8 +123,11 @@ const ApprovalAction = () => {
     const approvalLevel = String(preview?.approvalLevel || '').toUpperCase();
     const expectedStatus = prettyStatus(preview?.expectedStatus);
     const currentStatus = prettyStatus(preview?.currentStatus || request?.status);
-    const attachmentUrl = token ? `${API_BASE_URL}/requests/public/attachment?token=${encodeURIComponent(token)}` : null;
     const isRejectFlow = actionFromUrl === 'reject';
+
+    if (openMode === 'pdf') {
+        return <div className="min-h-screen grid place-items-center text-slate-600 font-semibold">Opening attachment PDF...</div>;
+    }
 
     return (
         <div className="min-h-screen bg-slate-100 px-4 py-8">
