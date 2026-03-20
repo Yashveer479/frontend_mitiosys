@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 
 export default function LaminationDepartment() {
@@ -9,6 +9,8 @@ export default function LaminationDepartment() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [historySearch, setHistorySearch] = useState('');
+    const [sourceFilter, setSourceFilter] = useState('ALL');
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -63,6 +65,21 @@ export default function LaminationDepartment() {
             setSubmitting(false);
         }
     };
+
+    const filteredHistory = useMemo(() => {
+        const query = historySearch.trim().toLowerCase();
+        return history.filter((item) => {
+            const sourceType = String(item.input_board_type || '').toLowerCase();
+            const matchesSearch =
+                !query ||
+                sourceType.includes(query) ||
+                String(item.id || '').toLowerCase().includes(query);
+            const matchesSource =
+                sourceFilter === 'ALL' || sourceType === String(sourceFilter).toLowerCase();
+
+            return matchesSearch && matchesSource;
+        });
+    }, [history, historySearch, sourceFilter]);
 
     return (
         <div className="p-6 max-w-4xl mx-auto space-y-8">
@@ -144,10 +161,34 @@ export default function LaminationDepartment() {
             {/* HISTORY */}
             <section>
                 <h2 className="text-lg font-semibold text-gray-700 mb-3">Processing History</h2>
+                <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input
+                        type="text"
+                        value={historySearch}
+                        onChange={(e) => setHistorySearch(e.target.value)}
+                        placeholder="Search by source type or record id"
+                        className="md:col-span-2 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500"
+                    />
+                    <select
+                        value={sourceFilter}
+                        onChange={(e) => setSourceFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500"
+                    >
+                        <option value="ALL">All source types</option>
+                        <option value="AG">AG</option>
+                        <option value="LAM">LAM</option>
+                        <option value="RS">RS</option>
+                        <option value="BLAM">BLAM</option>
+                        <option value="BG">BG</option>
+                        <option value="CG">CG</option>
+                    </select>
+                </div>
                 {loading ? (
                     <p className="text-gray-500">Loading…</p>
                 ) : history.length === 0 ? (
                     <p className="text-gray-500 italic">No records yet.</p>
+                ) : filteredHistory.length === 0 ? (
+                    <p className="text-gray-500 italic">No lamination records matched your search/filter.</p>
                 ) : (
                     <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
                         <table className="min-w-full text-sm text-left">
@@ -163,7 +204,7 @@ export default function LaminationDepartment() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
-                                {history.map(h => (
+                                {filteredHistory.map(h => (
                                     <tr key={h.id} className="hover:bg-gray-50">
                                         <td className="px-4 py-3 text-gray-400">{h.id}</td>
                                         <td className="px-4 py-3">

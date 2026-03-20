@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import {
     SlidersHorizontal,
@@ -21,6 +21,8 @@ const StockAdjustment = () => {
     const [reason, setReason] = useState('');
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
+    const [historySearch, setHistorySearch] = useState('');
+    const [historyTypeFilter, setHistoryTypeFilter] = useState('ALL');
 
     useEffect(() => {
         fetchInventory();
@@ -102,6 +104,25 @@ const StockAdjustment = () => {
     const diff = selectedItem != null && adjustedQty !== ''
         ? parseInt(adjustedQty, 10) - selectedItem.quantity
         : null;
+
+    const filteredAdjustments = useMemo(() => {
+        const query = historySearch.trim().toLowerCase();
+        return adjustments.filter((adj) => {
+            const direction = adj.adjusted_quantity > adj.previous_quantity
+                ? 'INCREASE'
+                : adj.adjusted_quantity < adj.previous_quantity
+                    ? 'DECREASE'
+                    : 'NO_CHANGE';
+
+            const matchesSearch =
+                !query ||
+                String(adj.item_name || '').toLowerCase().includes(query) ||
+                String(adj.reason || '').toLowerCase().includes(query);
+            const matchesDirection = historyTypeFilter === 'ALL' || historyTypeFilter === direction;
+
+            return matchesSearch && matchesDirection;
+        });
+    }, [adjustments, historySearch, historyTypeFilter]);
 
     return (
         <div className="space-y-8">
@@ -240,13 +261,34 @@ const StockAdjustment = () => {
                             <ClipboardList size={16} className="text-slate-400" />
                             <span className="text-sm font-bold text-slate-700">Recent Adjustments</span>
                         </div>
+                        <div className="px-6 py-4 border-b border-slate-100 grid grid-cols-1 gap-3">
+                            <input
+                                type="text"
+                                value={historySearch}
+                                onChange={(e) => setHistorySearch(e.target.value)}
+                                placeholder="Search item or reason"
+                                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            />
+                            <select
+                                value={historyTypeFilter}
+                                onChange={(e) => setHistoryTypeFilter(e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            >
+                                <option value="ALL">All adjustment types</option>
+                                <option value="INCREASE">Increases only</option>
+                                <option value="DECREASE">Decreases only</option>
+                                <option value="NO_CHANGE">No-change records</option>
+                            </select>
+                        </div>
                         {fetchingHistory ? (
                             <div className="py-8 text-center text-slate-400 text-xs">Loading…</div>
                         ) : adjustments.length === 0 ? (
                             <div className="py-8 text-center text-slate-400 text-xs">No adjustments yet</div>
+                        ) : filteredAdjustments.length === 0 ? (
+                            <div className="py-8 text-center text-slate-400 text-xs">No adjustments matched your search/filter</div>
                         ) : (
                             <ul className="divide-y divide-slate-50 max-h-[520px] overflow-y-auto">
-                                {adjustments.slice(0, 20).map(adj => (
+                                {filteredAdjustments.slice(0, 20).map(adj => (
                                     <li key={adj.id} className="px-6 py-4 space-y-1">
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm font-semibold text-slate-800 truncate">{adj.item_name}</span>

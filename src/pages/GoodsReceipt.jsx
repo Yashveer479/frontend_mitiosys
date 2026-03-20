@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import {
     Save,
@@ -28,6 +28,8 @@ const GoodsReceipt = () => {
         received_date: new Date().toISOString().split('T')[0],
         notes: ''
     });
+    const [receiptSearch, setReceiptSearch] = useState('');
+    const [receiptQtyFilter, setReceiptQtyFilter] = useState('ALL');
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -90,6 +92,23 @@ const GoodsReceipt = () => {
             setLoading(false);
         }
     };
+
+    const filteredGRNs = useMemo(() => {
+        const query = receiptSearch.trim().toLowerCase();
+        return recentGRNs.filter((grn) => {
+            const itemName = String(grn.purchaseItem?.item_name || '').toLowerCase();
+            const poLabel = String(grn.purchase_order_id || '').toLowerCase();
+            const quantity = Number(grn.received_quantity || 0);
+            const matchesSearch = !query || itemName.includes(query) || poLabel.includes(query);
+            const matchesQty =
+                receiptQtyFilter === 'ALL' ||
+                (receiptQtyFilter === 'SMALL' && quantity <= 10) ||
+                (receiptQtyFilter === 'MEDIUM' && quantity > 10 && quantity <= 100) ||
+                (receiptQtyFilter === 'LARGE' && quantity > 100);
+
+            return matchesSearch && matchesQty;
+        });
+    }, [recentGRNs, receiptSearch, receiptQtyFilter]);
 
     return (
         <div className="space-y-8">
@@ -253,11 +272,32 @@ const GoodsReceipt = () => {
                             <ClipboardList size={14} />
                             <span>Recent Receipts</span>
                         </h3>
+                        <div className="space-y-3 mb-4">
+                            <input
+                                type="text"
+                                value={receiptSearch}
+                                onChange={(e) => setReceiptSearch(e.target.value)}
+                                placeholder="Search item or PO"
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            />
+                            <select
+                                value={receiptQtyFilter}
+                                onChange={(e) => setReceiptQtyFilter(e.target.value)}
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            >
+                                <option value="ALL">All quantities</option>
+                                <option value="SMALL">Small (&lt;= 10)</option>
+                                <option value="MEDIUM">Medium (11-100)</option>
+                                <option value="LARGE">Large (&gt; 100)</option>
+                            </select>
+                        </div>
                         {recentGRNs.length === 0 ? (
                             <p className="text-sm text-slate-400 text-center py-8">No receipts recorded yet</p>
+                        ) : filteredGRNs.length === 0 ? (
+                            <p className="text-sm text-slate-400 text-center py-8">No receipts matched your search/filter</p>
                         ) : (
                             <div className="space-y-3">
-                                {recentGRNs.map(grn => (
+                                {filteredGRNs.map(grn => (
                                     <div key={grn.id} className="border border-slate-100 rounded-xl p-3 space-y-1">
                                         <div className="flex items-center justify-between">
                                             <span className="text-xs font-bold text-slate-700">

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import { ArrowRightLeft, Package, Clock, CheckCircle2, AlertCircle, PlusCircle, Factory, Trash2 } from 'lucide-react';
 
@@ -8,6 +8,8 @@ const Logistics = () => {
     const [warehouses, setWarehouses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
     const [formData, setFormData] = useState({
         productId: '',
         fromWarehouseId: '',
@@ -57,6 +59,24 @@ const Logistics = () => {
             alert(err.response?.data?.msg || 'Error receiving stock');
         }
     };
+
+    const filteredTransfers = useMemo(() => {
+        const query = searchTerm.trim().toLowerCase();
+        return transfers.filter((transfer) => {
+            const status = String(transfer.status || '').toUpperCase();
+            const productName = String(transfer.product?.name || '').toLowerCase();
+            const sourceName = String(transfer.fromWarehouse?.name || '').toLowerCase();
+            const targetName = String(transfer.toWarehouse?.name || '').toLowerCase();
+            const matchesSearch =
+                !query ||
+                productName.includes(query) ||
+                sourceName.includes(query) ||
+                targetName.includes(query) ||
+                String(transfer.id || '').toLowerCase().includes(query);
+            const matchesStatus = statusFilter === 'ALL' || status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+    }, [transfers, searchTerm, statusFilter]);
 
     if (loading) return <div className="p-8 animate-pulse text-slate-500 font-semibold text-xs text-center">Initialising Logistics Hub...</div>;
 
@@ -129,6 +149,24 @@ const Logistics = () => {
             )}
 
             <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search by STO id, product, source, destination"
+                        className="md:col-span-2 w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    >
+                        <option value="ALL">All statuses</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="RECEIVED">Received</option>
+                    </select>
+                </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -143,7 +181,7 @@ const Logistics = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {transfers.map((t) => (
+                            {filteredTransfers.map((t) => (
                                 <tr key={t.id} className="hover:bg-slate-50/50 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center space-x-3">
@@ -212,6 +250,11 @@ const Logistics = () => {
                             <ArrowRightLeft size={24} />
                         </div>
                         <p className="text-slate-400 font-semibold uppercase tracking-wider text-xs">No active movements detected</p>
+                    </div>
+                )}
+                {transfers.length > 0 && filteredTransfers.length === 0 && (
+                    <div className="p-8 text-center text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                        No transfer records matched your search/filter
                     </div>
                 )}
             </div>

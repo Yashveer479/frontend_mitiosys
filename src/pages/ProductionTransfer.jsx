@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 
 const BOARD_TYPES = ['AG', 'LAM', 'RS', 'BLAM', 'BG', 'CG'];
@@ -11,6 +11,8 @@ export default function ProductionTransfer() {
     const [transferring, setTransferring] = useState(null);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [detailFilter, setDetailFilter] = useState('ALL');
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -60,6 +62,22 @@ export default function ProductionTransfer() {
 
     const stockMap = Object.fromEntries(stock.map(s => [s.board_type, s.quantity]));
 
+    const filteredBatches = useMemo(() => {
+        const query = searchTerm.trim().toLowerCase();
+        return batches.filter((batch) => {
+            const hasDetails = Boolean(gradings[batch.id]);
+            const matchesSearch =
+                !query ||
+                String(batch.batch_number || '').toLowerCase().includes(query) ||
+                String(batch.id || '').toLowerCase().includes(query);
+            const matchesDetail =
+                detailFilter === 'ALL' ||
+                (detailFilter === 'WITH_DETAILS' && hasDetails) ||
+                (detailFilter === 'WITHOUT_DETAILS' && !hasDetails);
+            return matchesSearch && matchesDetail;
+        });
+    }, [batches, gradings, searchTerm, detailFilter]);
+
     return (
         <div className="p-6 max-w-6xl mx-auto space-y-8">
             <h1 className="text-2xl font-bold text-gray-800">Production → Warehouse Transfer</h1>
@@ -70,10 +88,30 @@ export default function ProductionTransfer() {
             {/* GRADED BATCHES TABLE */}
             <section>
                 <h2 className="text-lg font-semibold text-gray-700 mb-3">Graded Batches Awaiting Transfer</h2>
+                <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search by batch id or batch number"
+                        className="md:col-span-2 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500"
+                    />
+                    <select
+                        value={detailFilter}
+                        onChange={(e) => setDetailFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500"
+                    >
+                        <option value="ALL">All batches</option>
+                        <option value="WITH_DETAILS">With grading details</option>
+                        <option value="WITHOUT_DETAILS">Missing grading details</option>
+                    </select>
+                </div>
                 {loading ? (
                     <p className="text-gray-500">Loading...</p>
                 ) : batches.length === 0 ? (
                     <p className="text-gray-500 italic">No batches ready for transfer.</p>
+                ) : filteredBatches.length === 0 ? (
+                    <p className="text-gray-500 italic">No transfer batches matched your search/filter.</p>
                 ) : (
                     <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
                         <table className="min-w-full text-sm text-left">
@@ -90,7 +128,7 @@ export default function ProductionTransfer() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
-                                {batches.map(b => {
+                                {filteredBatches.map(b => {
                                     const g = gradings[b.id];
                                     return (
                                         <tr key={b.id} className="hover:bg-gray-50">

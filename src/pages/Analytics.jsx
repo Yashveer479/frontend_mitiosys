@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import {
     BarChart3,
@@ -23,6 +23,8 @@ const Analytics = () => {
     const [salesReport, setSalesReport] = useState([]);
     const [inventoryReport, setInventoryReport] = useState([]);
     const [customerReport, setCustomerReport] = useState([]);
+    const [customerSearch, setCustomerSearch] = useState('');
+    const [customerMinOrders, setCustomerMinOrders] = useState('ALL');
     const [summary, setSummary] = useState({
         totalRevenue: 0,
         totalOrders: 0,
@@ -149,6 +151,22 @@ const Analytics = () => {
         sales: `UGX ${((c.totalValue || 0) / 1000000).toFixed(1)}M`,
         volume: `${c.orderCount || 0} orders`
     }));
+
+    const filteredCustomers = useMemo(() => {
+        const query = customerSearch.trim().toLowerCase();
+        return customerReport.filter((customer) => {
+            const orderCount = Number(customer.orderCount || 0);
+            const meetsOrderThreshold =
+                customerMinOrders === 'ALL' ||
+                (customerMinOrders === 'MIN_1' && orderCount >= 1) ||
+                (customerMinOrders === 'MIN_5' && orderCount >= 5) ||
+                (customerMinOrders === 'MIN_10' && orderCount >= 10);
+            const matchesSearch =
+                !query || String(customer.customer || '').toLowerCase().includes(query);
+
+            return meetsOrderThreshold && matchesSearch;
+        });
+    }, [customerReport, customerSearch, customerMinOrders]);
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] pb-20 p-6 relative">
@@ -334,6 +352,26 @@ const Analytics = () => {
                         </button>
                     </div>
 
+                    <div className="mb-5 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input
+                            type="text"
+                            value={customerSearch}
+                            onChange={(e) => setCustomerSearch(e.target.value)}
+                            placeholder="Search by customer name"
+                            className="md:col-span-2 w-full px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500"
+                        />
+                        <select
+                            value={customerMinOrders}
+                            onChange={(e) => setCustomerMinOrders(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500"
+                        >
+                            <option value="ALL">All order counts</option>
+                            <option value="MIN_1">At least 1 order</option>
+                            <option value="MIN_5">At least 5 orders</option>
+                            <option value="MIN_10">At least 10 orders</option>
+                        </select>
+                    </div>
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
@@ -346,7 +384,7 @@ const Analytics = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                                {customerReport.slice(0, 5).map((customer, index) => (
+                                {filteredCustomers.slice(0, 5).map((customer, index) => (
                                     <tr key={index} className="group hover:bg-slate-50/50 transition-colors">
                                         <td className="py-4 text-xs font-black text-slate-300 group-hover:text-blue-500">#{index + 1}</td>
                                         <td className="py-4 text-sm font-bold text-slate-700">{customer.customer}</td>
@@ -363,6 +401,11 @@ const Analytics = () => {
                                 {customerReport.length === 0 && (
                                     <tr>
                                         <td colSpan="5" className="text-center py-10 text-slate-400 text-sm italic">No data available for the selected period.</td>
+                                    </tr>
+                                )}
+                                {customerReport.length > 0 && filteredCustomers.length === 0 && (
+                                    <tr>
+                                        <td colSpan="5" className="text-center py-10 text-slate-400 text-sm italic">No customers matched your search/filter.</td>
                                     </tr>
                                 )}
                             </tbody>

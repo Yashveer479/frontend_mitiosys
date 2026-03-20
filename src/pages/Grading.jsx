@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 
 const GRADES = [
@@ -16,6 +16,8 @@ const Grading = () => {
     const [sandingMap, setSandingMap] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [recordFilter, setRecordFilter] = useState('ALL');
 
     // Modal state
     const [modalBatch, setModalBatch] = useState(null);
@@ -103,6 +105,20 @@ const Grading = () => {
         }
     };
 
+    const filteredBatches = useMemo(() => {
+        const query = searchTerm.trim().toLowerCase();
+        return batches.filter((batch) => {
+            const hasSandingRecord = Boolean(sandingMap[batch.id]);
+            const matchesSearch = !query || String(batch.batch_number || '').toLowerCase().includes(query);
+            const matchesRecord =
+                recordFilter === 'ALL' ||
+                (recordFilter === 'WITH_RECORD' && hasSandingRecord) ||
+                (recordFilter === 'WITHOUT_RECORD' && !hasSandingRecord);
+
+            return matchesSearch && matchesRecord;
+        });
+    }, [batches, sandingMap, searchTerm, recordFilter]);
+
     return (
         <div className="space-y-8">
             {/* Page Header */}
@@ -116,6 +132,24 @@ const Grading = () => {
                 <div className="px-6 py-4 border-b border-slate-100">
                     <h2 className="text-lg font-semibold text-slate-800">Batches Ready for Grading</h2>
                     <p className="text-xs text-slate-400 mt-0.5">Stage: SANDING_PROCESSED → GRADED</p>
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Search by batch number"
+                            className="md:col-span-2 w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                        />
+                        <select
+                            value={recordFilter}
+                            onChange={(e) => setRecordFilter(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                        >
+                            <option value="ALL">All records</option>
+                            <option value="WITH_RECORD">With sanding output</option>
+                            <option value="WITHOUT_RECORD">Missing sanding output</option>
+                        </select>
+                    </div>
                 </div>
 
                 {loading ? (
@@ -125,6 +159,10 @@ const Grading = () => {
                 ) : batches.length === 0 ? (
                     <div className="px-6 py-10 text-center text-slate-400 text-sm">
                         No batches awaiting grading. Complete sanding first.
+                    </div>
+                ) : filteredBatches.length === 0 ? (
+                    <div className="px-6 py-10 text-center text-slate-400 text-sm">
+                        No grading batches matched your search/filter.
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -138,7 +176,7 @@ const Grading = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {batches.map(b => {
+                                {filteredBatches.map(b => {
                                     const sp = sandingMap[b.id];
                                     return (
                                         <tr key={b.id} className="hover:bg-slate-50 transition-colors">

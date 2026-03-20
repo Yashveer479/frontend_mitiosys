@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { ShoppingCart, Plus, Calendar, FileText, Download, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
@@ -9,6 +9,9 @@ const Orders = () => {
     const [orders, setOrders] = useState([]);
     const [expandedOrder, setExpandedOrder] = useState(null);
     const [generating, setGenerating] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [typeFilter, setTypeFilter] = useState('ALL');
     const isPendingOrdersView = location.pathname === '/sales/pending';
 
     const fetchOrders = async () => {
@@ -24,13 +27,28 @@ const Orders = () => {
         fetchOrders();
     }, []);
 
-    const displayedOrders = orders.filter((order) => {
-        if (!isPendingOrdersView) {
-            return true;
-        }
+    const displayedOrders = useMemo(() => {
+        const query = searchTerm.trim().toLowerCase();
+        return orders.filter((order) => {
+            if (isPendingOrdersView && String(order.status || '').toLowerCase() === 'completed') {
+                return false;
+            }
 
-        return String(order.status || '').toLowerCase() !== 'completed';
-    });
+            const orderStatus = String(order.status || '').toUpperCase();
+            const orderType = String(order.type || '').toUpperCase();
+            const customerName = String(order.Customer?.name || '').toLowerCase();
+            const notes = String(order.notes || '').toLowerCase();
+            const matchesSearch =
+                !query ||
+                customerName.includes(query) ||
+                notes.includes(query) ||
+                String(order.id || '').toLowerCase().includes(query);
+            const matchesStatus = statusFilter === 'ALL' || orderStatus === statusFilter;
+            const matchesType = typeFilter === 'ALL' || orderType === typeFilter;
+
+            return matchesSearch && matchesStatus && matchesType;
+        });
+    }, [orders, isPendingOrdersView, searchTerm, statusFilter, typeFilter]);
 
     const handleGenerateDoc = async (orderId, type) => {
         const typeMap = {
@@ -64,6 +82,36 @@ const Orders = () => {
                     <Plus size={18} />
                     <span>Initiate New Order</span>
                 </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search by customer, notes, or order id"
+                    className="md:col-span-2 w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                >
+                    <option value="ALL">All statuses</option>
+                    <option value="PROCESSING">Processing</option>
+                    <option value="DISPATCHED">Dispatched</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="PENDING">Pending</option>
+                </select>
+                <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                >
+                    <option value="ALL">All order types</option>
+                    <option value="SALES">Sales</option>
+                    <option value="LOGISTICS">Logistics</option>
+                </select>
             </div>
 
             <div className="grid grid-cols-1 gap-6">
