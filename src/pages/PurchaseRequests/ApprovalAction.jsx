@@ -89,7 +89,7 @@ const ApprovalAction = () => {
         }
     }, [comment, token]);
 
-    const attachmentUrl = token ? `${API_BASE_URL}/requests/public/attachment?token=${encodeURIComponent(token)}` : null;
+    const attachmentUrl = token ? `${API_BASE_URL}/requests/public/attachment?token=${encodeURIComponent(token)}&forwarded=1` : null;
 
     useEffect(() => {
         if (openMode === 'pdf' && attachmentUrl) {
