@@ -105,6 +105,7 @@ const ApprovalAction = () => {
     const approvalLevel = String(preview?.approvalLevel || '').toUpperCase();
     const expectedStatus = prettyStatus(preview?.expectedStatus);
     const currentStatus = prettyStatus(preview?.currentStatus || request?.status);
+    const attachmentUrl = token ? `${API_BASE_URL}/requests/public/attachment?token=${encodeURIComponent(token)}` : null;
 
     return (
         <div className="min-h-screen bg-slate-100 px-4 py-8">
@@ -128,6 +129,22 @@ const ApprovalAction = () => {
                                 <div><span className="font-semibold text-slate-700">Quantity:</span> {request.quantity}</div>
                                 <div><span className="font-semibold text-slate-700">Priority:</span> {request.priority || 'Medium'}</div>
                             </div>
+
+                            {request.attachment && (
+                                <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+                                    <p className="text-sm font-semibold text-slate-700">
+                                        Attached PDF: <span className="font-bold">{request.attachment.original_name || 'request.pdf'}</span>
+                                    </p>
+                                    <a
+                                        href={attachmentUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-block mt-2 text-sm font-semibold text-blue-700 hover:text-blue-800 underline"
+                                    >
+                                        Open PDF document
+                                    </a>
+                                </div>
+                            )}
 
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Comment (optional)</label>

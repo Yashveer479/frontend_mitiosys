@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { toServerUrl } from '../../services/urlConfig';
 
 const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
     const { user } = useAuth();
@@ -94,6 +95,7 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
         request.status === 'PENDING_GM_APPROVAL' ? 'GM' :
         request.status === 'PENDING_DM_APPROVAL' ? 'DM' :
         null;
+    const attachmentUrl = request.attachment?.file_path ? toServerUrl(request.attachment.file_path) : null;
 
     return (
         <div className="animate-in slide-in-from-right-4 duration-300">
@@ -127,6 +129,27 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
                             {request.description || "No description provided."}
                         </p>
                     </section>
+
+                    {request.attachment && (
+                        <section className="bg-blue-50 rounded-2xl p-6 border border-blue-100">
+                            <h3 className="text-xs font-black text-blue-500 uppercase tracking-[0.2em] mb-3">Attached PDF</h3>
+                            <p className="text-sm font-semibold text-slate-700 mb-3">
+                                {request.attachment.original_name || 'request.pdf'}
+                            </p>
+                            {attachmentUrl ? (
+                                <a
+                                    href={attachmentUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-blue-200 rounded-lg text-blue-700 text-xs font-black uppercase tracking-wider hover:bg-blue-100 transition-all"
+                                >
+                                    Open PDF
+                                </a>
+                            ) : (
+                                <p className="text-xs font-semibold text-rose-500">Attachment file URL is unavailable.</p>
+                            )}
+                        </section>
+                    )}
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                         <InfoItem label="Requested By" value={request.requester?.name} icon={User} />

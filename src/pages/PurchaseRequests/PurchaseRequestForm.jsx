@@ -13,6 +13,7 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [attachment, setAttachment] = useState(null);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -24,8 +25,34 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
         setLoading(true);
         setError(null);
 
+        if (attachment && attachment.type !== 'application/pdf') {
+            setLoading(false);
+            setError('Only PDF files are allowed.');
+            return;
+        }
+
+        if (attachment && attachment.size > 10 * 1024 * 1024) {
+            setLoading(false);
+            setError('PDF file is too large. Maximum size is 10MB.');
+            return;
+        }
+
         try {
-            await api.post('/requests/create', formData);
+            const payload = new FormData();
+            payload.append('title', formData.title);
+            payload.append('request_type', formData.request_type);
+            payload.append('description', formData.description);
+            payload.append('quantity', String(formData.quantity));
+            payload.append('priority', formData.priority);
+            payload.append('department', formData.department || '');
+
+            if (attachment) {
+                payload.append('attachment', attachment);
+            }
+
+            await api.post('/requests/create', payload, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
             onSuccess();
         } catch (err) {
             setError(err.response?.data?.msg || 'Failed to create request');
@@ -132,6 +159,19 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
                             placeholder="Detailed explanation of why this resource is needed..."
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all resize-none"
                         ></textarea>
+                    </div>
+
+                    <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">PDF Attachment (optional)</label>
+                        <input
+                            type="file"
+                            accept="application/pdf,.pdf"
+                            onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-xs file:font-black file:text-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all"
+                        />
+                        <p className="mt-2 text-xs text-slate-500 font-semibold">
+                            Upload one PDF document (max 10MB). It will be visible to PM, GM, and DM during approval.
+                        </p>
                     </div>
                 </div>
 
