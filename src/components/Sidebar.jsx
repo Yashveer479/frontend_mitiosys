@@ -53,13 +53,14 @@ const groups = [
         label: 'Procurement',
         icon: ShoppingBag,
         color: 'text-amber-400',
-        paths: ['/purchase-requests', '/general-approvals', '/inventory/suppliers', '/inventory/purchase-orders', '/inventory/goods-receipt'],
+        paths: ['/purchase-requests', '/general-approvals', '/inventory/suppliers', '/inventory/purchase-orders', '/inventory/goods-receipt', '/admin/approval-matrix'],
         items: [
             { name: 'Purchase Requests', path: '/purchase-requests', icon: ClipboardList },
             { name: 'General Approval', path: '/general-approvals', icon: ClipboardCheck },
             { name: 'Suppliers', path: '/inventory/suppliers', icon: Truck },
             { name: 'Purchase Orders', path: '/inventory/purchase-orders', icon: ReceiptText },
             { name: 'Goods Receipt', path: '/inventory/goods-receipt', icon: ClipboardList },
+            { name: 'Approval Matrix', path: '/admin/approval-matrix', icon: ClipboardCheck },
         ]
     },
     {
@@ -101,12 +102,11 @@ const groups = [
         label: 'Administration',
         icon: Shield,
         color: 'text-slate-400',
-        paths: ['/users', '/settings', '/admin/approvers', '/admin/approval-matrix'],
+        paths: ['/users', '/settings', '/admin/approvers'],
         items: [
             { name: 'Users', path: '/users', icon: Shield },
             { name: 'Settings', path: '/settings', icon: SettingsIcon },
             { name: 'Approvers', path: '/admin/approvers', icon: Shield },
-            { name: 'Approval Matrix', path: '/admin/approval-matrix', icon: ClipboardCheck },
         ]
     },
 ];
