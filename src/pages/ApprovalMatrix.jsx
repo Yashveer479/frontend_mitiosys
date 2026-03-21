@@ -75,8 +75,8 @@ const ApprovalMatrix = () => {
                 approver_email: selectedApprover?.email || null,
                 approval_type: form.approval_type,
                 min_amount: Number(form.min_amount),
-                max_amount: Number(form.max_amount),
-                escalation_to: form.escalation_to ? Number(form.escalation_to) : null,
+                max_amount: form.max_amount === '' ? null : Number(form.max_amount),
+                escalation_to: form.escalation_to ? String(form.escalation_to).trim() : null,
                 remarks: form.remarks || null
             };
 
@@ -155,7 +155,8 @@ const ApprovalMatrix = () => {
                             >
                                 <option value="PR">PR</option>
                                 <option value="PO">PO</option>
-                                <option value="BOTH">BOTH</option>
+                                <option value="PR / PO">PR / PO</option>
+                                <option value="BOTH">Both</option>
                             </select>
                         </label>
 
@@ -180,19 +181,19 @@ const ApprovalMatrix = () => {
                                 min="0"
                                 value={form.max_amount}
                                 onChange={(e) => onChange('max_amount', e.target.value)}
-                                required
                                 className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                                placeholder="Leave empty for Unlimited"
                             />
                         </label>
 
                         <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                             Escalation Level
                             <input
-                                type="number"
-                                min="1"
+                                type="text"
                                 value={form.escalation_to}
                                 onChange={(e) => onChange('escalation_to', e.target.value)}
                                 className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                                placeholder="e.g. Level 2 or Final Approval"
                             />
                         </label>
 
@@ -243,7 +244,7 @@ const ApprovalMatrix = () => {
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.department || '-'}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.user_name || row.approver_name || row.resolved_approver_email || '-'}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.approval_type || '-'}</td>
-                                            <td className="py-3 px-4 text-sm text-slate-700">{row.min_amount} - {row.max_amount}</td>
+                                            <td className="py-3 px-4 text-sm text-slate-700">{row.min_amount} - {row.max_amount ?? 'Unlimited'}</td>
                                         </tr>
                                     ))}
                                 </tbody>

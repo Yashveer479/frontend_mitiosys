@@ -18,6 +18,44 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 
+const APPROVAL_MATRIX_PROFILES = [
+    {
+        id: 'LEVEL_1_DEPARTMENT_HEAD',
+        label: 'Level 1 - Department Head',
+        department: 'Department Head',
+        role: 'manager',
+        approval_level: 'PM'
+    },
+    {
+        id: 'LEVEL_2_PROCUREMENT',
+        label: 'Level 2 - Procurement',
+        department: 'Procurement',
+        role: 'manager',
+        approval_level: 'GM'
+    },
+    {
+        id: 'LEVEL_3_FINANCE',
+        label: 'Level 3 - Finance',
+        department: 'Finance',
+        role: 'manager',
+        approval_level: 'GM'
+    },
+    {
+        id: 'LEVEL_4_DIRECTOR',
+        label: 'Level 4 - Director',
+        department: 'Director',
+        role: 'admin',
+        approval_level: 'DM'
+    },
+    {
+        id: 'LEVEL_5_CEO',
+        label: 'Level 5 - CEO',
+        department: 'CEO',
+        role: 'admin',
+        approval_level: 'DM'
+    }
+];
+
 const UserManagement = () => {
     const { user: currentUser } = useAuth();
     const [users, setUsers] = useState([]);
@@ -30,6 +68,7 @@ const UserManagement = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [loading, setLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
+    const [selectedMatrixProfile, setSelectedMatrixProfile] = useState('');
 
     // Form State
     const [formData, setFormData] = useState({
@@ -96,6 +135,7 @@ const UserManagement = () => {
             await api.post('/users', payload);
             fetchUsers();
             setShowAddModal(false);
+            setSelectedMatrixProfile('');
             setFormData({ name: '', email: '', role: 'staff', approval_level: 'NONE', password: '' });
         } catch (err) {
             const status = err?.response?.status;
@@ -400,11 +440,49 @@ const UserManagement = () => {
                             </div>
                             <div className="grid grid-cols-1 gap-4">
                                 <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Matrix Role Profile</label>
+                                    <select
+                                        value={selectedMatrixProfile}
+                                        onChange={(e) => {
+                                            const profileId = e.target.value;
+                                            setSelectedMatrixProfile(profileId);
+
+                                            const profile = APPROVAL_MATRIX_PROFILES.find((item) => item.id === profileId);
+                                            if (!profile) {
+                                                return;
+                                            }
+
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                role: profile.role,
+                                                approval_level: profile.approval_level
+                                            }));
+                                        }}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-500 transition-all"
+                                    >
+                                        <option value="">Custom / Manual Selection</option>
+                                        {APPROVAL_MATRIX_PROFILES.map((profile) => (
+                                            <option key={profile.id} value={profile.id}>
+                                                {profile.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {selectedMatrixProfile && (
+                                        <p className="mt-2 text-[10px] text-blue-700 font-bold uppercase tracking-wider">
+                                            {(() => {
+                                                const profile = APPROVAL_MATRIX_PROFILES.find((item) => item.id === selectedMatrixProfile);
+                                                return profile ? `Department: ${profile.department}` : '';
+                                            })()}
+                                        </p>
+                                    )}
+                                </div>
+                                <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Role</label>
                                     <select
                                         value={formData.role}
                                         onChange={(e) => {
                                             const nextRole = e.target.value;
+                                            setSelectedMatrixProfile('');
                                             setFormData((prev) => ({
                                                 ...prev,
                                                 role: nextRole,
