@@ -432,9 +432,11 @@ const UserManagement = () => {
                                         className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-500 transition-all ${!['admin', 'manager'].includes(formData.role) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         <option value="NONE">None</option>
-                                        <option value="PM">PM (Project Manager)</option>
-                                        <option value="GM">GM (General Manager)</option>
-                                        <option value="DM">DM (Director Manager)</option>
+                                        <option value="PM">Level 1 - Department Head</option>
+                                        <option value="GM">Level 2 - Procurement</option>
+                                        <option value="DM">Level 3 - Finance</option>
+                                        <option value="L4">Level 4 - Director</option>
+                                        <option value="L5">Level 5 - CEO</option>
                                     </select>
                                 </div>
                             </div>

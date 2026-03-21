@@ -1,12 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 
 const initialForm = {
     level: '',
-    department: '',
-    approver_id: '',
-    approver_name: '',
-    approver_email: '',
     approval_type: 'PR',
     min_amount: '',
     max_amount: '',
@@ -16,7 +12,6 @@ const initialForm = {
 
 const ApprovalMatrix = () => {
     const [form, setForm] = useState(initialForm);
-    const [approvers, setApprovers] = useState([]);
     const [matrix, setMatrix] = useState([]);
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -24,12 +19,7 @@ const ApprovalMatrix = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [approverRes, matrixRes] = await Promise.all([
-                api.get('/admin/approvers'),
-                api.get('/admin/approval-matrix')
-            ]);
-
-            setApprovers(Array.isArray(approverRes.data) ? approverRes.data : []);
+            const matrixRes = await api.get('/admin/approval-matrix');
             setMatrix(Array.isArray(matrixRes.data) ? matrixRes.data : []);
         } catch (err) {
             console.error('Failed to load approval matrix data:', err);
@@ -43,12 +33,6 @@ const ApprovalMatrix = () => {
         loadData();
     }, []);
 
-    const selectedApprover = useMemo(() => {
-        const approverId = Number(form.approver_id);
-        if (!Number.isInteger(approverId)) return null;
-        return approvers.find((item) => item.id === approverId) || null;
-    }, [form.approver_id, approvers]);
-
     const onChange = (field, value) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
@@ -60,10 +44,6 @@ const ApprovalMatrix = () => {
         try {
             const payload = {
                 level: Number(form.level),
-                department: form.department || null,
-                approver_id: form.approver_id ? Number(form.approver_id) : null,
-                approver_name: (selectedApprover?.name || form.approver_name || '').trim() || null,
-                approver_email: (selectedApprover?.email || form.approver_email || '').trim() || null,
                 approval_type: form.approval_type,
                 min_amount: Number(form.min_amount),
                 max_amount: form.max_amount === '' ? null : Number(form.max_amount),
@@ -87,7 +67,7 @@ const ApprovalMatrix = () => {
             <div className="max-w-7xl mx-auto space-y-8">
                 <div>
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">Approval Matrix</h1>
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Configure dynamic PR/PO approval routing</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Configure PR/PO routing by level and amount. Approver is auto-fetched from User Management.</p>
                 </div>
 
                 <form onSubmit={saveMatrix} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
@@ -101,64 +81,6 @@ const ApprovalMatrix = () => {
                                 onChange={(e) => onChange('level', e.target.value)}
                                 required
                                 className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
-                            />
-                        </label>
-
-                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                            Department
-                            <input
-                                type="text"
-                                value={form.department}
-                                onChange={(e) => onChange('department', e.target.value)}
-                                className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
-                            />
-                        </label>
-
-                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                            Select Approver
-                            <select
-                                value={form.approver_id}
-                                onChange={(e) => {
-                                    const nextId = e.target.value;
-                                    const matched = approvers.find((item) => String(item.id) === String(nextId));
-                                    setForm((prev) => ({
-                                        ...prev,
-                                        approver_id: nextId,
-                                        approver_name: matched?.name || prev.approver_name,
-                                        approver_email: matched?.email || prev.approver_email
-                                    }));
-                                }}
-                                className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
-                            >
-                                <option value="">Choose approver (optional)</option>
-                                {approvers.map((approver) => (
-                                    <option key={approver.id} value={approver.id}>
-                                        {approver.name} ({approver.email})
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-
-                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                            Approver Name
-                            <input
-                                type="text"
-                                value={form.approver_name}
-                                onChange={(e) => onChange('approver_name', e.target.value)}
-                                className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
-                                placeholder="e.g. Procurement Manager"
-                            />
-                        </label>
-
-                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                            Approver Email
-                            <input
-                                type="email"
-                                value={form.approver_email}
-                                onChange={(e) => onChange('approver_email', e.target.value)}
-                                required={!form.approver_id}
-                                className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
-                                placeholder="e.g. manager@nileplywood.com"
                             />
                         </label>
 
@@ -248,7 +170,6 @@ const ApprovalMatrix = () => {
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-100">
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Level</th>
-                                        <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Department</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Approver</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Type</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Amount Range</th>
@@ -258,7 +179,6 @@ const ApprovalMatrix = () => {
                                     {matrix.map((row) => (
                                         <tr key={row.id} className="hover:bg-slate-50/60">
                                             <td className="py-3 px-4 text-sm font-semibold text-slate-900">{row.level}</td>
-                                            <td className="py-3 px-4 text-sm text-slate-700">{row.department || '-'}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.user_name || row.approver_name || row.resolved_approver_email || '-'}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.approval_type || '-'}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.min_amount} - {row.max_amount ?? 'Unlimited'}</td>
