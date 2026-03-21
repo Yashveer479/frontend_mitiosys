@@ -46,6 +46,8 @@ import PurchaseRequestSystem from './pages/PurchaseRequests/PurchaseRequestSyste
 import ApprovalEntry from './pages/PurchaseRequests/ApprovalEntry';
 import ApprovalAction from './pages/PurchaseRequests/ApprovalAction';
 import GeneralApprovalSystem from './pages/GeneralApprovals/GeneralApprovalSystem';
+import AdminApprovers from './pages/AdminApprovers';
+import ApprovalMatrix from './pages/ApprovalMatrix';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import RoleGuard from './components/RoleGuard';
@@ -117,6 +119,8 @@ function App() {
                                 <Route path="/system-status" element={systemPortal} />
                                 <Route path="/users" element={<RoleGuard roles={['admin']}><UserManagement /></RoleGuard>} />
                                 <Route path="/settings" element={<RoleGuard roles={['admin']}><Settings /></RoleGuard>} />
+                                <Route path="/admin/approvers" element={<RoleGuard roles={['admin']}><AdminApprovers /></RoleGuard>} />
+                                <Route path="/admin/approval-matrix" element={<RoleGuard roles={['admin']}><ApprovalMatrix /></RoleGuard>} />
                                 <Route path="/profile" element={<Profile />} />
                                 <Route path="/change-password" element={<ChangePassword />} />
                                 <Route path="/change-email" element={<ChangeEmail />} />

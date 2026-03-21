@@ -101,10 +101,12 @@ const groups = [
         label: 'Administration',
         icon: Shield,
         color: 'text-slate-400',
-        paths: ['/users', '/settings'],
+        paths: ['/users', '/settings', '/admin/approvers', '/admin/approval-matrix'],
         items: [
             { name: 'Users', path: '/users', icon: Shield },
             { name: 'Settings', path: '/settings', icon: SettingsIcon },
+            { name: 'Approvers', path: '/admin/approvers', icon: Shield },
+            { name: 'Approval Matrix', path: '/admin/approval-matrix', icon: ClipboardCheck },
         ]
     },
 ];
