@@ -5,6 +5,8 @@ const initialForm = {
     level: '',
     department: '',
     approver_id: '',
+    approver_name: '',
+    approver_email: '',
     approval_type: 'PR',
     min_amount: '',
     max_amount: '',
@@ -60,8 +62,8 @@ const ApprovalMatrix = () => {
                 level: Number(form.level),
                 department: form.department || null,
                 approver_id: form.approver_id ? Number(form.approver_id) : null,
-                approver_name: selectedApprover?.name || null,
-                approver_email: selectedApprover?.email || null,
+                approver_name: (selectedApprover?.name || form.approver_name || '').trim() || null,
+                approver_email: (selectedApprover?.email || form.approver_email || '').trim() || null,
                 approval_type: form.approval_type,
                 min_amount: Number(form.min_amount),
                 max_amount: form.max_amount === '' ? null : Number(form.max_amount),
@@ -116,17 +118,48 @@ const ApprovalMatrix = () => {
                             Select Approver
                             <select
                                 value={form.approver_id}
-                                onChange={(e) => onChange('approver_id', e.target.value)}
-                                required
+                                onChange={(e) => {
+                                    const nextId = e.target.value;
+                                    const matched = approvers.find((item) => String(item.id) === String(nextId));
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        approver_id: nextId,
+                                        approver_name: matched?.name || prev.approver_name,
+                                        approver_email: matched?.email || prev.approver_email
+                                    }));
+                                }}
                                 className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
                             >
-                                <option value="">Choose approver</option>
+                                <option value="">Choose approver (optional)</option>
                                 {approvers.map((approver) => (
                                     <option key={approver.id} value={approver.id}>
                                         {approver.name} ({approver.email})
                                     </option>
                                 ))}
                             </select>
+                        </label>
+
+                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            Approver Name
+                            <input
+                                type="text"
+                                value={form.approver_name}
+                                onChange={(e) => onChange('approver_name', e.target.value)}
+                                className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                                placeholder="e.g. Procurement Manager"
+                            />
+                        </label>
+
+                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            Approver Email
+                            <input
+                                type="email"
+                                value={form.approver_email}
+                                onChange={(e) => onChange('approver_email', e.target.value)}
+                                required={!form.approver_id}
+                                className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                                placeholder="e.g. manager@nileplywood.com"
+                            />
                         </label>
 
                         <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
