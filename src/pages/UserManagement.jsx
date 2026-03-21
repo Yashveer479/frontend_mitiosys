@@ -45,6 +45,19 @@ const UserManagement = () => {
         confirmPassword: ''
     });
 
+    const approvalLevelLabel = (level) => {
+        const value = String(level || 'NONE').toUpperCase();
+        if (value === 'PM') return 'PM';
+        if (value === 'GM') return 'GM';
+        if (value === 'DM') return 'DM';
+        if (value === 'L1') return 'Level 1 - Department Head';
+        if (value === 'L2') return 'Level 2 - Procurement';
+        if (value === 'L3') return 'Level 3 - Finance';
+        if (value === 'L4') return 'Level 4 - Director';
+        if (value === 'L5') return 'Level 5 - CEO';
+        return 'NONE';
+    };
+
     useEffect(() => {
         fetchUsers();
     }, []);
@@ -269,9 +282,14 @@ const UserManagement = () => {
                                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide ${user.approval_level === 'PM' ? 'bg-indigo-100 text-indigo-700' :
                                                     user.approval_level === 'GM' ? 'bg-amber-100 text-amber-700' :
                                                         user.approval_level === 'DM' ? 'bg-rose-100 text-rose-700' :
+                                                            user.approval_level === 'L1' ? 'bg-cyan-100 text-cyan-700' :
+                                                                user.approval_level === 'L2' ? 'bg-violet-100 text-violet-700' :
+                                                                    user.approval_level === 'L3' ? 'bg-fuchsia-100 text-fuchsia-700' :
+                                                            user.approval_level === 'L4' ? 'bg-sky-100 text-sky-700' :
+                                                                user.approval_level === 'L5' ? 'bg-emerald-100 text-emerald-700' :
                                                             'bg-slate-100 text-slate-400'
                                                     }`}>
-                                                    {user.approval_level || 'NONE'}
+                                                    {approvalLevelLabel(user.approval_level)}
                                                 </span>
                                             </td>
                                             <td className="py-4 px-6 text-center">
@@ -432,9 +450,12 @@ const UserManagement = () => {
                                         className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-500 transition-all ${!['admin', 'manager'].includes(formData.role) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         <option value="NONE">None</option>
-                                        <option value="PM">Level 1 - Department Head</option>
-                                        <option value="GM">Level 2 - Procurement</option>
-                                        <option value="DM">Level 3 - Finance</option>
+                                        <option value="PM">PM</option>
+                                        <option value="GM">GM</option>
+                                        <option value="DM">DM</option>
+                                        <option value="L1">Level 1 - Department Head</option>
+                                        <option value="L2">Level 2 - Procurement</option>
+                                        <option value="L3">Level 3 - Finance</option>
                                         <option value="L4">Level 4 - Director</option>
                                         <option value="L5">Level 5 - CEO</option>
                                     </select>
