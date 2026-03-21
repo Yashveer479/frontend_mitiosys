@@ -99,6 +99,24 @@ const ApprovalMatrix = () => {
                     <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Configure dynamic PR/PO approval routing</p>
                 </div>
 
+                <div className="bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-100 rounded-2xl p-5">
+                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-2">Nile Plywood Workflow Policy</h2>
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                        Commercial department is configured for GM final approval. GM may escalate to CEO or Director if deemed fit.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="px-2.5 py-1 rounded-lg bg-white text-slate-700 text-[10px] font-black uppercase tracking-wider border border-slate-200">
+                            PR/PO Matrix Active
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-white text-slate-700 text-[10px] font-black uppercase tracking-wider border border-slate-200">
+                            Department Aware Routing
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-white text-slate-700 text-[10px] font-black uppercase tracking-wider border border-slate-200">
+                            Unlimited Max Supported
+                        </span>
+                    </div>
+                </div>
+
                 <form onSubmit={saveMatrix} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -221,7 +239,12 @@ const ApprovalMatrix = () => {
 
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-100">
-                        <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Configured Rules</h2>
+                        <div className="flex items-center justify-between gap-3">
+                            <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Configured Rules</h2>
+                            <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[10px] font-black uppercase tracking-wider">
+                                Total Rules: {matrix.length}
+                            </span>
+                        </div>
                     </div>
                     <div className="overflow-x-auto">
                         {loading ? (
@@ -233,8 +256,11 @@ const ApprovalMatrix = () => {
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Level</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Department</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Approver</th>
+                                        <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Email</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Type</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Amount Range</th>
+                                        <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Escalation</th>
+                                        <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Remarks</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
@@ -243,8 +269,11 @@ const ApprovalMatrix = () => {
                                             <td className="py-3 px-4 text-sm font-semibold text-slate-900">{row.level}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.department || '-'}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.user_name || row.approver_name || row.resolved_approver_email || '-'}</td>
+                                            <td className="py-3 px-4 text-sm text-slate-700">{row.resolved_approver_email || row.approver_email || '-'}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.approval_type || '-'}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.min_amount} - {row.max_amount ?? 'Unlimited'}</td>
+                                            <td className="py-3 px-4 text-sm text-slate-700">{row.escalation_to || '-'}</td>
+                                            <td className="py-3 px-4 text-sm text-slate-700">{row.remarks || '-'}</td>
                                         </tr>
                                     ))}
                                 </tbody>
