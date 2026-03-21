@@ -15,6 +15,8 @@ const ApprovalMatrix = () => {
     const [matrix, setMatrix] = useState([]);
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [successMsg, setSuccessMsg] = useState('');
 
     const loadData = async () => {
         setLoading(true);
@@ -37,6 +39,13 @@ const ApprovalMatrix = () => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
 
+    const showSuccess = (msg) => {
+        setSuccessMsg(msg);
+        window.setTimeout(() => {
+            setSuccessMsg('');
+        }, 2500);
+    };
+
     const saveMatrix = async (e) => {
         e.preventDefault();
         setSaving(true);
@@ -51,14 +60,56 @@ const ApprovalMatrix = () => {
                 remarks: form.remarks || null
             };
 
-            await api.post('/admin/approval-matrix', payload);
+            if (editingId) {
+                await api.put(`/admin/approval-matrix/${editingId}`, payload);
+                showSuccess('Matrix rule updated successfully.');
+            } else {
+                await api.post('/admin/approval-matrix', payload);
+                showSuccess('Matrix rule saved successfully.');
+            }
+
             setForm(initialForm);
+            setEditingId(null);
             await loadData();
         } catch (err) {
             console.error('Failed to save approval matrix:', err);
             alert(err?.response?.data?.msg || 'Failed to save matrix entry');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const startEdit = (row) => {
+        setEditingId(row.id);
+        setForm({
+            level: String(row.level || ''),
+            approval_type: row.approval_type || 'PR',
+            min_amount: String(row.min_amount ?? ''),
+            max_amount: row.max_amount === null || row.max_amount === undefined ? '' : String(row.max_amount),
+            escalation_to: row.escalation_to || '',
+            remarks: row.remarks || ''
+        });
+    };
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        setForm(initialForm);
+    };
+
+    const deleteMatrix = async (id) => {
+        const confirmed = window.confirm('Delete this matrix rule?');
+        if (!confirmed) return;
+
+        try {
+            await api.delete(`/admin/approval-matrix/${id}`);
+            if (editingId === id) {
+                cancelEdit();
+            }
+            showSuccess('Matrix rule deleted successfully.');
+            await loadData();
+        } catch (err) {
+            console.error('Failed to delete matrix entry:', err);
+            alert(err?.response?.data?.msg || 'Failed to delete matrix entry');
         }
     };
 
@@ -69,6 +120,12 @@ const ApprovalMatrix = () => {
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">Approval Matrix</h1>
                     <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Configure PR/PO routing by level and amount. Approver is auto-fetched from User Management.</p>
                 </div>
+
+                {successMsg && (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                        {successMsg}
+                    </div>
+                )}
 
                 <form onSubmit={saveMatrix} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -148,12 +205,21 @@ const ApprovalMatrix = () => {
                     </div>
 
                     <div className="mt-5 flex justify-end">
+                        {editingId && (
+                            <button
+                                type="button"
+                                onClick={cancelEdit}
+                                className="mr-3 px-5 py-2.5 rounded-xl bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider hover:bg-slate-300"
+                            >
+                                Cancel Edit
+                            </button>
+                        )}
                         <button
                             type="submit"
                             disabled={saving}
                             className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-black uppercase tracking-wider hover:bg-blue-700 disabled:opacity-60"
                         >
-                            {saving ? 'Saving...' : 'Save Matrix'}
+                            {saving ? 'Saving...' : editingId ? 'Update Matrix' : 'Save Matrix'}
                         </button>
                     </div>
                 </form>
@@ -173,6 +239,7 @@ const ApprovalMatrix = () => {
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Approver</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Type</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Amount Range</th>
+                                        <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
@@ -182,6 +249,22 @@ const ApprovalMatrix = () => {
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.user_name || row.approver_name || row.resolved_approver_email || '-'}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.approval_type || '-'}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.min_amount} - {row.max_amount ?? 'Unlimited'}</td>
+                                            <td className="py-3 px-4 text-right">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => startEdit(row)}
+                                                    className="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-wide hover:bg-blue-200"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => deleteMatrix(row.id)}
+                                                    className="ml-2 px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 text-[10px] font-black uppercase tracking-wide hover:bg-rose-200"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
