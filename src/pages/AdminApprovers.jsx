@@ -2,6 +2,18 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { RefreshCw, ShieldCheck } from 'lucide-react';
 import api from '../services/api';
 
+const resolveRoleBasis = (user) => {
+    const level = String(user?.approval_level || '').toUpperCase();
+    if (level === 'PM') return 'Project Manager (PM)';
+    if (level === 'GM') return 'General Manager (GM)';
+    if (level === 'DM') return 'Director Manager (DM)';
+
+    const role = String(user?.role || '').toLowerCase();
+    if (!role) return 'Not Defined';
+
+    return role.charAt(0).toUpperCase() + role.slice(1);
+};
+
 const AdminApprovers = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -83,6 +95,7 @@ const AdminApprovers = () => {
                                     <tr className="bg-slate-50 border-b border-slate-100">
                                         <th className="py-3 px-5 text-[10px] font-black uppercase tracking-widest text-slate-400">User</th>
                                         <th className="py-3 px-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Email</th>
+                                        <th className="py-3 px-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Role Basis</th>
                                         <th className="py-3 px-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Approver</th>
                                         <th className="py-3 px-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Action</th>
                                     </tr>
@@ -92,6 +105,7 @@ const AdminApprovers = () => {
                                         <tr key={user.id} className="hover:bg-slate-50/60">
                                             <td className="py-3 px-5 text-sm font-semibold text-slate-900">{user.name || 'Unknown User'}</td>
                                             <td className="py-3 px-5 text-sm text-slate-600">{user.email || '-'}</td>
+                                            <td className="py-3 px-5 text-sm text-slate-700">{resolveRoleBasis(user)}</td>
                                             <td className="py-3 px-5">
                                                 {user.is_approver ? (
                                                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-wide">

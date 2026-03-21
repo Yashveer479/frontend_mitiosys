@@ -1,6 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 
+const resolveRoleBasis = (user) => {
+    const level = String(user?.approval_level || '').toUpperCase();
+    if (level === 'PM') return 'Project Manager (PM)';
+    if (level === 'GM') return 'General Manager (GM)';
+    if (level === 'DM') return 'Director Manager (DM)';
+
+    const role = String(user?.role || '').toLowerCase();
+    if (!role) return 'Not Defined';
+    return role.charAt(0).toUpperCase() + role.slice(1);
+};
+
 const initialForm = {
     level: '',
     department: '',
@@ -123,10 +134,15 @@ const ApprovalMatrix = () => {
                                 <option value="">Choose approver</option>
                                 {approvers.map((approver) => (
                                     <option key={approver.id} value={approver.id}>
-                                        {approver.name} ({approver.email})
+                                        {approver.name} ({approver.email}) - {resolveRoleBasis(approver)}
                                     </option>
                                 ))}
                             </select>
+                            {selectedApprover && (
+                                <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-blue-700">
+                                    Role Basis: {resolveRoleBasis(selectedApprover)}
+                                </p>
+                            )}
                         </label>
 
                         <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
