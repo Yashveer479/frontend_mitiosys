@@ -16,6 +16,7 @@ const ApprovalAction = () => {
     const openMode = useMemo(() => String(searchParams.get('open') || '').trim().toLowerCase(), [searchParams]);
     const moduleType = useMemo(() => String(searchParams.get('module') || '').trim().toLowerCase(), [searchParams]);
     const isGeneralApproval = moduleType === 'general';
+    const isUnifiedApproval = moduleType === 'unified';
     const actionFromUrl = useMemo(() => {
         const value = String(searchParams.get('action') || '').trim().toLowerCase();
         return ['approve', 'reject'].includes(value) ? value : '';
@@ -38,7 +39,8 @@ const ApprovalAction = () => {
 
         try {
             setLoading(true);
-            const response = await axios.get(`${API_BASE_URL}${isGeneralApproval ? '/general-approvals' : '/requests'}/public/preview`, {
+            const endpointBase = isGeneralApproval ? '/general-approvals' : isUnifiedApproval ? '/unified-requests' : '/requests';
+            const response = await axios.get(`${API_BASE_URL}${endpointBase}/public/preview`, {
                 params: { token }
             });
             setPreview(response.data);
@@ -48,7 +50,7 @@ const ApprovalAction = () => {
         } finally {
             setLoading(false);
         }
-    }, [token, isGeneralApproval]);
+    }, [token, isGeneralApproval, isUnifiedApproval]);
 
     const submitAction = useCallback(async (action, { force = false } = {}) => {
         if (!token) return;
@@ -71,7 +73,8 @@ const ApprovalAction = () => {
             setError('');
             setSuccess('');
 
-            const response = await axios.post(`${API_BASE_URL}${isGeneralApproval ? '/general-approvals' : '/requests'}/public/act`, {
+            const endpointBase = isGeneralApproval ? '/general-approvals' : isUnifiedApproval ? '/unified-requests' : '/requests';
+            const response = await axios.post(`${API_BASE_URL}${endpointBase}/public/act`, {
                 token,
                 action,
                 comment: comment.trim() || null
@@ -89,10 +92,10 @@ const ApprovalAction = () => {
         } finally {
             setSubmitting(false);
         }
-    }, [comment, token, isGeneralApproval]);
+    }, [comment, token, isGeneralApproval, isUnifiedApproval]);
 
     const attachmentUrl = token
-        ? `${API_BASE_URL}${isGeneralApproval ? '/general-approvals' : '/requests'}/public/attachment?token=${encodeURIComponent(token)}&forwarded=1`
+        ? `${API_BASE_URL}${isGeneralApproval ? '/general-approvals' : isUnifiedApproval ? '/unified-requests' : '/requests'}/public/attachment?token=${encodeURIComponent(token)}&forwarded=1`
         : null;
 
     useEffect(() => {
@@ -137,7 +140,7 @@ const ApprovalAction = () => {
         <div className="min-h-screen bg-slate-100 px-4 py-8">
             <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
                 <div className="px-6 py-5 border-b border-slate-200 bg-slate-50">
-                    <h1 className="text-2xl font-bold text-slate-800">{isGeneralApproval ? 'General Approval' : 'Purchase Request Approval'}</h1>
+                    <h1 className="text-2xl font-bold text-slate-800">{isGeneralApproval ? 'General Approval' : isUnifiedApproval ? 'Unified Request Approval' : 'Purchase Request Approval'}</h1>
                     <p className="text-sm text-slate-600 mt-1">Secure mail-link workflow. No login is required for this action.</p>
                 </div>
 
@@ -148,12 +151,14 @@ const ApprovalAction = () => {
                     {request && (
                         <>
                             <div className="grid sm:grid-cols-2 gap-4 text-sm">
-                                <div><span className="font-semibold text-slate-700">Request ID:</span> {isGeneralApproval ? `GA-${request.id}` : `PR-${request.id}`}</div>
+                                <div><span className="font-semibold text-slate-700">Request ID:</span> {isGeneralApproval ? `GA-${request.id}` : isUnifiedApproval ? `REQ-${request.id}` : `PR-${request.id}`}</div>
                                 <div><span className="font-semibold text-slate-700">Status:</span> {prettyStatus(request.status)}</div>
                                 <div><span className="font-semibold text-slate-700">Title:</span> {request.title}</div>
-                                {!isGeneralApproval && <div><span className="font-semibold text-slate-700">Type:</span> {request.request_type}</div>}
-                                {!isGeneralApproval && <div><span className="font-semibold text-slate-700">Quantity:</span> {request.quantity}</div>}
-                                {!isGeneralApproval && <div><span className="font-semibold text-slate-700">Priority:</span> {request.priority || 'Medium'}</div>}
+                                {!isGeneralApproval && !isUnifiedApproval && <div><span className="font-semibold text-slate-700">Type:</span> {request.request_type}</div>}
+                                {!isGeneralApproval && !isUnifiedApproval && <div><span className="font-semibold text-slate-700">Quantity:</span> {request.quantity}</div>}
+                                {!isGeneralApproval && !isUnifiedApproval && <div><span className="font-semibold text-slate-700">Priority:</span> {request.priority || 'Medium'}</div>}
+                                {isUnifiedApproval && <div><span className="font-semibold text-slate-700">Type:</span> {request.type}</div>}
+                                {isUnifiedApproval && <div><span className="font-semibold text-slate-700">Amount:</span> {Number(request.invoice_amount).toLocaleString()}</div>}
                                 {isGeneralApproval && <div><span className="font-semibold text-slate-700">Flow:</span> {request.first_level} {'->'} {request.second_level} {'->'} {request.third_level}</div>}
                             </div>
 
