@@ -99,8 +99,13 @@ const ApprovalAction = () => {
         : null;
 
     useEffect(() => {
+        if ((openMode === 'pdf' || openMode === 'file') && attachmentUrl) {
+            window.location.replace(attachmentUrl);
+            return;
+        }
+
         loadPreview();
-    }, [loadPreview]);
+    }, [loadPreview, openMode, attachmentUrl]);
 
     useEffect(() => {
         if (!preview || !actionFromUrl || autoActionDone) {
@@ -126,8 +131,6 @@ const ApprovalAction = () => {
     const expectedStatus = prettyStatus(preview?.expectedStatus);
     const currentStatus = prettyStatus(preview?.currentStatus || request?.status);
     const isRejectFlow = actionFromUrl === 'reject';
-
-    const shouldFocusAttachment = openMode === 'pdf' || openMode === 'file';
 
     return (
         <div className="min-h-screen bg-slate-100 px-4 py-8">
@@ -160,31 +163,14 @@ const ApprovalAction = () => {
                                     <p className="text-sm font-semibold text-slate-700">
                                         Attachment: <span className="font-bold">{request.attachment.original_name || 'request-file'}</span>
                                     </p>
-                                    <p className="mt-1 text-xs text-slate-600">Preview is shown below. You can review and approve/reject on this same page.</p>
                                     <a
                                         href={attachmentUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-block mt-2 text-sm font-semibold text-blue-700 hover:text-blue-800 underline"
                                     >
-                                        Open in new tab
+                                        Open file
                                     </a>
-                                </div>
-                            )}
-
-                            {request.attachment && attachmentUrl && (
-                                <div className={`rounded-xl border bg-white overflow-hidden ${shouldFocusAttachment ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'}`}>
-                                    <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-                                        <h2 className="text-sm font-bold text-slate-800">Attachment Preview</h2>
-                                    </div>
-                                    <div className="w-full" style={{ minHeight: '70vh' }}>
-                                        <iframe
-                                            src={attachmentUrl}
-                                            title="Request attachment preview"
-                                            className="w-full"
-                                            style={{ height: '70vh', border: '0' }}
-                                        />
-                                    </div>
                                 </div>
                             )}
 
