@@ -99,13 +99,21 @@ const ApprovalAction = () => {
         : null;
 
     useEffect(() => {
+        if (actionFromUrl === 'approve' && token) {
+            const endpointBase = isGeneralApproval ? '/general-approvals' : isUnifiedApproval ? '/unified-requests' : '/requests';
+            const quickActionValue = isUnifiedApproval ? 'APPROVED' : 'approve';
+            const quickActionUrl = `${API_BASE_URL}${endpointBase}/public/quick-action?token=${encodeURIComponent(token)}&action=${quickActionValue}`;
+            window.location.replace(quickActionUrl);
+            return;
+        }
+
         if ((openMode === 'pdf' || openMode === 'file') && attachmentUrl) {
             window.location.replace(attachmentUrl);
             return;
         }
 
         loadPreview();
-    }, [loadPreview, openMode, attachmentUrl]);
+    }, [actionFromUrl, token, isGeneralApproval, isUnifiedApproval, openMode, attachmentUrl, loadPreview]);
 
     useEffect(() => {
         if (!preview || !actionFromUrl || autoActionDone) {
