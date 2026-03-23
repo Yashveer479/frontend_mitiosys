@@ -329,7 +329,18 @@ const ApprovalMatrix = () => {
                                     {matrix.map((row) => (
                                         <tr key={row.id} className="hover:bg-slate-50/60">
                                             <td className="py-3 px-4 text-sm font-semibold text-slate-900">{row.level}</td>
-                                            <td className="py-3 px-4 text-sm text-slate-700">{row.user_name || row.approver_name || row.resolved_approver_email || '-'}</td>
+                                            <td className="py-3 px-4 text-xs font-medium text-slate-700">
+                                                {row.user_name || row.approver_name ? (
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-slate-900">{row.user_name || row.approver_name}</span>
+                                                        <span className="text-[10px] text-slate-400 font-mono tracking-tighter">{row.resolved_approver_email || row.approver_email}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-100 italic">
+                                                        Dynamic (Level {row.level})
+                                                    </span>
+                                                )}
+                                            </td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.approval_type || '-'}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.min_amount} - {row.max_amount ?? 'Unlimited'}</td>
                                             <td className="py-3 px-4 text-right">
