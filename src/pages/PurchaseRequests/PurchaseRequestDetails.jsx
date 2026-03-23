@@ -97,6 +97,47 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
         null;
     const attachmentUrl = request.attachment?.file_path ? toServerUrl(request.attachment.file_path) : null;
 
+    const normalizeRoleToStage = (roleValue) => {
+        const role = String(roleValue || '').trim().toUpperCase();
+        if (role === 'PM' || role === 'L1') return 'PM';
+        if (role === 'GM' || role === 'L2') return 'GM';
+        if (role === 'DM' || role === 'L3') return 'DM';
+        return null;
+    };
+
+    const rejectLog = Array.isArray(request.logs)
+        ? request.logs.find((log) => String(log.action || '').toLowerCase() === 'reject')
+        : null;
+    const rejectedStage = normalizeRoleToStage(rejectLog?.role);
+
+    const resolveWorkflowStepStatus = (stage) => {
+        const isRejected = request.status === 'REJECTED';
+
+        if (isRejected && rejectedStage === stage) {
+            return 'failed';
+        }
+
+        if (stage === 'PM') {
+            if (request.status === 'PENDING_PM_APPROVAL') return 'active';
+            if (request.pm_approved_by) return 'completed';
+            return 'pending';
+        }
+
+        if (stage === 'GM') {
+            if (request.status === 'PENDING_GM_APPROVAL') return 'active';
+            if (request.gm_approved_by) return 'completed';
+            return 'pending';
+        }
+
+        if (stage === 'DM') {
+            if (request.status === 'PENDING_DM_APPROVAL') return 'active';
+            if (request.dm_approved_by) return 'completed';
+            return 'pending';
+        }
+
+        return 'pending';
+    };
+
     return (
         <div className="animate-in slide-in-from-right-4 duration-300">
             {/* Action Bar */}
@@ -260,29 +301,17 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
                         <div className="space-y-6">
                             <WorkflowStep 
                                 label="Project Manager" 
-                                status={
-                                    request.status === 'PENDING_PM_APPROVAL' ? 'active' : 
-                                    request.pm_approved_by ? 'completed' : 
-                                    request.status === 'REJECTED' ? 'failed' : 'pending'
-                                } 
+                                status={resolveWorkflowStepStatus('PM')}
                                 user={request.pmApprover?.name}
                             />
                             <WorkflowStep 
                                 label="General Manager" 
-                                status={
-                                    request.status === 'PENDING_GM_APPROVAL' ? 'active' : 
-                                    request.gm_approved_by ? 'completed' : 
-                                    request.status === 'REJECTED' && (request.status === 'PENDING_GM_APPROVAL' || request.gm_approved_by) ? 'failed' : 'pending'
-                                } 
+                                status={resolveWorkflowStepStatus('GM')}
                                 user={request.gmApprover?.name}
                             />
                             <WorkflowStep 
                                 label="Director Manager" 
-                                status={
-                                    request.status === 'PENDING_DM_APPROVAL' ? 'active' : 
-                                    request.dm_approved_by ? 'completed' : 
-                                    request.status === 'REJECTED' && (request.status === 'PENDING_DM_APPROVAL' || request.dm_approved_by) ? 'failed' : 'pending'
-                                } 
+                                status={resolveWorkflowStepStatus('DM')}
                                 user={request.dmApprover?.name}
                             />
                         </div>
@@ -310,7 +339,8 @@ const WorkflowStep = ({ label, status, user }) => {
             </div>
             <div>
                 <p className={`text-[11px] font-black uppercase tracking-tight ${status === 'active' ? 'text-blue-600' : 'text-slate-500'}`}>{label}</p>
-                {user && <p className="text-[10px] font-bold text-slate-400 mt-0.5">Approved by: {user}</p>}
+                {user && status === 'failed' && <p className="text-[10px] font-bold text-rose-400 mt-0.5">Rejected by: {user}</p>}
+                {user && status !== 'failed' && <p className="text-[10px] font-bold text-slate-400 mt-0.5">Approved by: {user}</p>}
                 {!user && status === 'active' && <p className="text-[10px] font-bold text-amber-500 mt-0.5 italic">Awaiting Action</p>}
                 {!user && status === 'pending' && <p className="text-[10px] font-bold text-slate-300 mt-0.5">Queue</p>}
             </div>
