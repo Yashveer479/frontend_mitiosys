@@ -11,6 +11,15 @@ const initialForm = {
     remarks: ''
 };
 
+const sanitizeApproverValue = (value) => {
+    const normalized = String(value ?? '').trim();
+    if (!normalized) return null;
+    if (normalized === '-' || normalized.toLowerCase() === 'null' || normalized.toLowerCase() === 'undefined') {
+        return null;
+    }
+    return normalized;
+};
+
 const ApprovalMatrix = () => {
     const [form, setForm] = useState(initialForm);
     const [matrix, setMatrix] = useState([]);
@@ -169,8 +178,22 @@ const ApprovalMatrix = () => {
                 invoice_amount: Number(form.min_amount), 
                 department: '' 
             };
-            await api.post('/unified-requests', payload);
-            showSuccess('Request generated and approval flow created successfully.');
+            const res = await api.post('/unified-requests', payload);
+            const levels = Number(res?.data?.workflow?.levels || 0);
+            const mailAttempted = Boolean(res?.data?.email?.attempted);
+            const mailSuccess = Boolean(res?.data?.email?.success);
+            const mailReason = String(res?.data?.email?.reason || '').trim();
+
+            let msg = `Request generated with ${levels} approval level${levels === 1 ? '' : 's'}.`;
+            if (mailAttempted && mailSuccess) {
+                msg += ' Initial approval email sent.';
+            } else if (mailAttempted && !mailSuccess && mailReason === 'smtp_not_configured') {
+                msg += ' Approval flow created, but SMTP is not configured so email was skipped.';
+            } else if (mailAttempted && !mailSuccess && mailReason) {
+                msg += ` Approval flow created, but initial email failed (${mailReason}).`;
+            }
+
+            showSuccess(msg);
             await loadRequests();
         } catch (err) {
             console.error('Failed to generate request:', err);
@@ -327,13 +350,17 @@ const ApprovalMatrix = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
                                     {matrix.map((row) => (
+                                        (() => {
+                                            const displayName = sanitizeApproverValue(row.user_name) || sanitizeApproverValue(row.approver_name);
+                                            const displayEmail = sanitizeApproverValue(row.resolved_approver_email) || sanitizeApproverValue(row.approver_email);
+                                            return (
                                         <tr key={row.id} className="hover:bg-slate-50/60">
                                             <td className="py-3 px-4 text-sm font-semibold text-slate-900">{row.level}</td>
                                             <td className="py-3 px-4 text-xs font-medium text-slate-700">
-                                                {row.user_name || row.approver_name ? (
+                                                {displayName ? (
                                                     <div className="flex flex-col">
-                                                        <span className="font-bold text-slate-900">{row.user_name || row.approver_name}</span>
-                                                        <span className="text-[10px] text-slate-400 font-mono tracking-tighter">{row.resolved_approver_email || row.approver_email}</span>
+                                                        <span className="font-bold text-slate-900">{displayName}</span>
+                                                        <span className="text-[10px] text-slate-400 font-mono tracking-tighter">{displayEmail || '-'}</span>
                                                     </div>
                                                 ) : (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-100 italic">
@@ -360,6 +387,8 @@ const ApprovalMatrix = () => {
                                                 </button>
                                             </td>
                                         </tr>
+                                            );
+                                        })()
                                     ))}
                                 </tbody>
                             </table>
