@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 const initialForm = {
@@ -22,6 +23,9 @@ const ApprovalMatrix = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [submittingRequest, setSubmittingRequest] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
+    const [actionLoading, setActionLoading] = useState(false);
+    const [actionRemarks, setActionRemarks] = useState('');
+    const { user } = useAuth();
 
     const loadData = async () => {
         setLoading(true);
@@ -125,6 +129,29 @@ const ApprovalMatrix = () => {
         } catch (err) {
             console.error('Failed to delete matrix entry:', err);
             alert(err?.response?.data?.msg || 'Failed to delete matrix entry');
+        }
+    };
+
+    const handleAction = async (requestId, action) => {
+        if (!actionRemarks.trim()) {
+            alert('Please provide remarks/reason for your action.');
+            return;
+        }
+        setActionLoading(true);
+        try {
+            await api.post(`/unified-requests/${requestId}/action`, { action, remarks: actionRemarks });
+            setSuccessMsg(`Request ${action.toLowerCase()} successfully!`);
+            setActionRemarks('');
+            await loadRequests();
+            // Update selected request view if open
+            const res = await api.get('/unified-requests');
+            const updated = res.data.find(r => r.id === requestId);
+            setSelectedRequest(updated);
+        } catch (err) {
+            console.error('Action failed:', err);
+            alert(err?.response?.data?.msg || 'Failed to process action');
+        } finally {
+            setActionLoading(false);
         }
     };
 
@@ -400,7 +427,35 @@ const ApprovalMatrix = () => {
                                                 <p className="text-xs text-slate-500 font-medium">
                                                     {log.timestamp ? new Date(log.timestamp).toLocaleString() : 'Pending action'}
                                                 </p>
-                                                {log.remarks && <p className="text-xs text-slate-600 mt-2 bg-slate-50 p-2 rounded">{log.remarks}</p>}
+                                                {log.remarks && <p className="text-xs text-slate-600 mt-2 bg-slate-50 p-2 rounded italic">"{log.remarks}"</p>}
+                                                
+                                                {/* Action Buttons for current approver */}
+                                                {log.status === 'PENDING' && user?.email?.toLowerCase() === log.approver_email?.toLowerCase() && (
+                                                    <div className="mt-4 space-y-3 pt-3 border-t border-slate-100">
+                                                        <textarea
+                                                            placeholder="Enter remarks/reason..."
+                                                            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                            value={actionRemarks}
+                                                            onChange={(e) => setActionRemarks(e.target.value)}
+                                                        />
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => handleAction(selectedRequest.id, 'APPROVED')}
+                                                                disabled={actionLoading}
+                                                                className="flex-1 px-3 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                                                            >
+                                                                {actionLoading ? 'Processing...' : 'Approve'}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleAction(selectedRequest.id, 'REJECTED')}
+                                                                disabled={actionLoading}
+                                                                className="flex-1 px-3 py-2 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-rose-700 disabled:opacity-50"
+                                                            >
+                                                                Reject
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
