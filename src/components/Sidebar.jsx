@@ -53,14 +53,13 @@ const groups = [
         label: 'Procurement',
         icon: ShoppingBag,
         color: 'text-amber-400',
-        paths: ['/purchase-requests', '/general-approvals', '/inventory/suppliers', '/inventory/purchase-orders', '/inventory/goods-receipt', '/admin/approval-matrix'],
+        paths: ['/purchase-requests', '/general-approvals', '/inventory/suppliers', '/inventory/purchase-orders', '/inventory/goods-receipt'],
         items: [
             { name: 'Purchase Requests', path: '/purchase-requests', icon: ClipboardList },
             { name: 'General Approval', path: '/general-approvals', icon: ClipboardCheck },
             { name: 'Suppliers', path: '/inventory/suppliers', icon: Truck },
             { name: 'Purchase Orders', path: '/inventory/purchase-orders', icon: ReceiptText },
             { name: 'Goods Receipt', path: '/inventory/goods-receipt', icon: ClipboardList },
-            { name: 'Approval Matrix', path: '/admin/approval-matrix', icon: ClipboardCheck },
         ]
     },
     {
@@ -98,15 +97,25 @@ const groups = [
         ]
     },
     {
+        id: 'approvers',
+        label: 'Approval Engine',
+        icon: ClipboardCheck,
+        color: 'text-indigo-400',
+        paths: ['/admin/approval-matrix', '/admin/approvers'],
+        items: [
+            { name: 'Approval Matrix', path: '/admin/approval-matrix', icon: ClipboardCheck },
+            { name: 'Approvers', path: '/admin/approvers', icon: Shield },
+        ]
+    },
+    {
         id: 'admin',
         label: 'Administration',
         icon: Shield,
         color: 'text-slate-400',
-        paths: ['/users', '/settings', '/admin/approvers'],
+        paths: ['/users', '/settings'],
         items: [
             { name: 'Users', path: '/users', icon: Shield },
             { name: 'Settings', path: '/settings', icon: SettingsIcon },
-            { name: 'Approvers', path: '/admin/approvers', icon: Shield },
         ]
     },
 ];

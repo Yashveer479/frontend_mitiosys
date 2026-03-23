@@ -18,6 +18,11 @@ const ApprovalMatrix = () => {
     const [editingId, setEditingId] = useState(null);
     const [successMsg, setSuccessMsg] = useState('');
 
+    const [requests, setRequests] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [submittingRequest, setSubmittingRequest] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+
     const loadData = async () => {
         setLoading(true);
         try {
@@ -31,8 +36,18 @@ const ApprovalMatrix = () => {
         }
     };
 
+    const loadRequests = async () => {
+        try {
+            const res = await api.get('/unified-requests');
+            setRequests(Array.isArray(res.data) ? res.data : []);
+        } catch (err) {
+            console.error('Failed to load unified requests:', err);
+        }
+    };
+
     useEffect(() => {
         loadData();
+        loadRequests();
     }, []);
 
     const onChange = (field, value) => {
@@ -113,12 +128,39 @@ const ApprovalMatrix = () => {
         }
     };
 
+    const generateRequest = async () => {
+        if (!form.min_amount) {
+            alert('Please enter a Min Amount to simulate a request.');
+            return;
+        }
+        setSubmittingRequest(true);
+        try {
+            const payload = { 
+                title: `Automated Request (${form.approval_type}) for $${form.min_amount}`, 
+                type: form.approval_type === 'BOTH' || form.approval_type === 'PR / PO' ? 'PR' : form.approval_type, 
+                quantity: 1, 
+                invoice_amount: Number(form.min_amount), 
+                department: '' 
+            };
+            await api.post('/unified-requests', payload);
+            showSuccess('Request generated and approval flow created successfully.');
+            await loadRequests();
+        } catch (err) {
+            console.error('Failed to generate request:', err);
+            alert(err?.response?.data?.msg || 'Failed to generate request');
+        } finally {
+            setSubmittingRequest(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#F8FAFC] pb-20 p-6">
             <div className="max-w-7xl mx-auto space-y-8">
-                <div>
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">Approval Matrix</h1>
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Configure PR/PO routing by level and amount. Approver is auto-fetched from User Management.</p>
+                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">Approval Workflow</h1>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Configure matrix rules and generate requests dynamically.</p>
+                    </div>
                 </div>
 
                 {successMsg && (
@@ -127,8 +169,10 @@ const ApprovalMatrix = () => {
                     </div>
                 )}
 
-                <form onSubmit={saveMatrix} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-4">
+                    <h2 className="text-lg font-black text-slate-800 tracking-tight">Matrix Rules & Simulation Engine</h2>
+                    <form onSubmit={saveMatrix} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                             Level
                             <input
@@ -193,7 +237,7 @@ const ApprovalMatrix = () => {
                             />
                         </label>
 
-                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider md:col-span-2 lg:col-span-2">
+                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider md:col-span-2">
                             Remarks
                             <input
                                 type="text"
@@ -204,25 +248,37 @@ const ApprovalMatrix = () => {
                         </label>
                     </div>
 
-                    <div className="mt-5 flex justify-end">
-                        {editingId && (
-                            <button
-                                type="button"
-                                onClick={cancelEdit}
-                                className="mr-3 px-5 py-2.5 rounded-xl bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider hover:bg-slate-300"
-                            >
-                                Cancel Edit
-                            </button>
-                        )}
+                    <div className="mt-5 flex justify-between items-center sm:flex-row flex-col gap-4">
                         <button
-                            type="submit"
-                            disabled={saving}
-                            className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-black uppercase tracking-wider hover:bg-blue-700 disabled:opacity-60"
+                            type="button"
+                            onClick={generateRequest}
+                            disabled={submittingRequest || saving}
+                            className="px-5 py-2.5 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-black uppercase tracking-wider hover:bg-indigo-100 disabled:opacity-60 transition-colors sm:w-auto w-full"
                         >
-                            {saving ? 'Saving...' : editingId ? 'Update Matrix' : 'Save Matrix'}
+                            {submittingRequest ? 'Generating...' : 'Simulate Request'}
                         </button>
+                        <div className="flex justify-end gap-3 sm:w-auto w-full">
+                            {editingId && (
+                                <button
+                                    type="button"
+                                    onClick={cancelEdit}
+                                    className="px-5 py-2.5 rounded-xl bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider hover:bg-slate-300"
+                                >
+                                    Cancel Edit
+                                </button>
+                            )}
+                            <button
+                                type="submit"
+                                disabled={saving || submittingRequest}
+                                className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-black uppercase tracking-wider hover:bg-blue-700 disabled:opacity-60"
+                            >
+                                {saving ? 'Saving...' : editingId ? 'Update Matrix' : 'Save Matrix'}
+                            </button>
+                        </div>
                     </div>
                 </form>
+
+                </div>
 
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-100">
@@ -272,8 +328,92 @@ const ApprovalMatrix = () => {
                         )}
                     </div>
                 </div>
+
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                        <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Request History</h2>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50 border-b border-slate-100">
+                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Req ID</th>
+                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Title</th>
+                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Type</th>
+                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Amount</th>
+                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Department</th>
+                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Date</th>
+                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {requests.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="8" className="py-8 text-center text-sm text-slate-500 font-semibold">No requests generated yet.</td>
+                                    </tr>
+                                ) : requests.map((req) => (
+                                    <tr key={req.id} className={`hover:bg-slate-50/60 transition-colors ${selectedRequest?.id === req.id ? 'bg-indigo-50/50' : ''}`}>
+                                        <td className="py-3 px-4 text-sm font-bold text-slate-900">REQ-{req.id}</td>
+                                        <td className="py-3 px-4 text-sm font-medium text-slate-800">{req.title}</td>
+                                        <td className="py-3 px-4 text-sm font-bold text-indigo-600">{req.type}</td>
+                                        <td className="py-3 px-4 text-sm text-slate-700">${Number(req.invoice_amount).toLocaleString()}</td>
+                                        <td className="py-3 px-4 text-sm text-slate-600">{req.department || '-'}</td>
+                                        <td className="py-3 px-4">
+                                            <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider ${req.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : req.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>{req.status}</span>
+                                        </td>
+                                        <td className="py-3 px-4 text-xs font-medium text-slate-500">{new Date(req.createdAt).toLocaleDateString()}</td>
+                                        <td className="py-3 px-4 text-right">
+                                            <button
+                                                onClick={() => setSelectedRequest(req)}
+                                                className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-[10px] font-black uppercase tracking-wide hover:bg-slate-200"
+                                            >
+                                                View Approvals
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {selectedRequest && (
+                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden border-l-4 border-l-indigo-500">
+                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                            <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Approval History for REQ-{selectedRequest.id}</h2>
+                            <button onClick={() => setSelectedRequest(null)} className="text-xs font-bold text-slate-400 hover:text-slate-600 uppercase">Close</button>
+                        </div>
+                        <div className="p-4 sm:p-6 bg-slate-50/50">
+                            {selectedRequest.approvalLogs && selectedRequest.approvalLogs.length > 0 ? (
+                                <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+                                    {selectedRequest.approvalLogs.map((log) => (
+                                        <div key={log.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                                            <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-100 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 font-bold text-xs uppercase">
+                                                L{log.level}
+                                            </div>
+                                            <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <h3 className="font-bold text-slate-800 text-sm">{log.approver_name || log.approver_email}</h3>
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${log.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : log.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500'}`}>{log.status}</span>
+                                                </div>
+                                                <p className="text-xs text-slate-500 font-medium">
+                                                    {log.timestamp ? new Date(log.timestamp).toLocaleString() : 'Pending action'}
+                                                </p>
+                                                {log.remarks && <p className="text-xs text-slate-600 mt-2 bg-slate-50 p-2 rounded">{log.remarks}</p>}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-slate-500 text-center py-4 font-semibold">No approval workflow generated for this request.</p>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
-        </div>
+
+            </div>
     );
 };
 
