@@ -4,14 +4,12 @@ import api from '../services/api';
 
 const resolveRoleBasis = (user) => {
     const level = String(user?.approval_level || '').toUpperCase();
-    if (level === 'PM') return 'PM - Procurement Manager';
-    if (level === 'GM') return 'GM - General Manager';
-    if (level === 'DM') return 'DM - Department Manager';
-    if (level === 'L1') return 'Level 1 - Department Head';
-    if (level === 'L2') return 'Level 2 - Procurement';
-    if (level === 'L3') return 'Level 3 - Finance';
-    if (level === 'L4') return 'Director (Level 4)';
-    if (level === 'L5') return 'CEO (Level 5)';
+    if (level === 'PM' || level === 'L1') return 'Level 1 - Procurement Manager';
+    if (level === 'DM' || level === 'L2') return 'Level 2 - Department Manager';
+    if (level === 'L3') return 'Level 3 - Finance Manager';
+    if (level === 'L4') return 'Level 4 - Director';
+    if (level === 'L5') return 'Level 5 - CEO';
+    if (level === 'GM') return 'General Manager (No Level)';
 
     const role = String(user?.role || '').toLowerCase();
     if (!role) return 'Not Defined';

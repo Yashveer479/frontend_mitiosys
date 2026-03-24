@@ -47,14 +47,12 @@ const UserManagement = () => {
 
     const approvalLevelLabel = (level) => {
         const value = String(level || 'NONE').toUpperCase();
-        if (value === 'PM') return 'PM - Procurement Manager';
-        if (value === 'GM') return 'GM - General Manager';
-        if (value === 'DM') return 'DM - Department Manager';
-        if (value === 'L1') return 'Level 1 - Department Head';
-        if (value === 'L2') return 'Level 2 - Procurement';
-        if (value === 'L3') return 'Level 3 - Finance';
+        if (value === 'PM' || value === 'L1') return 'Level 1 - Procurement Manager';
+        if (value === 'DM' || value === 'L2') return 'Level 2 - Department Manager';
+        if (value === 'L3') return 'Level 3 - Finance Manager';
         if (value === 'L4') return 'Level 4 - Director';
         if (value === 'L5') return 'Level 5 - CEO';
+        if (value === 'GM') return 'General Manager (No Level)';
         return 'NONE';
     };
 
@@ -450,14 +448,12 @@ const UserManagement = () => {
                                         className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-500 transition-all ${!['admin', 'manager'].includes(formData.role) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         <option value="NONE">None</option>
-                                        <option value="PM">PM - Procurement Manager</option>
-                                        <option value="GM">GM - General Manager</option>
-                                        <option value="DM">DM - Department Manager</option>
-                                        <option value="L1">Level 1 - Department Head</option>
-                                        <option value="L2">Level 2 - Procurement</option>
-                                        <option value="L3">Level 3 - Finance</option>
+                                        <option value="L1">Level 1 - Procurement Manager</option>
+                                        <option value="L2">Level 2 - Department Manager</option>
+                                        <option value="L3">Level 3 - Finance Manager</option>
                                         <option value="L4">Level 4 - Director</option>
                                         <option value="L5">Level 5 - CEO</option>
+                                        <option value="GM">General Manager (No Level)</option>
                                     </select>
                                 </div>
                             </div>
