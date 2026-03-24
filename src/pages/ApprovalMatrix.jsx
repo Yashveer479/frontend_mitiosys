@@ -88,6 +88,7 @@ const ApprovalMatrix = () => {
         try {
             const payload = {
                 level: Number(form.level),
+                department: form.department ? String(form.department).trim() : null,
                 approval_type: form.approval_type,
                 min_amount: Number(form.min_amount),
                 max_amount: form.max_amount === '' || Number(form.max_amount) <= 0 ? null : Number(form.max_amount),
@@ -123,7 +124,7 @@ const ApprovalMatrix = () => {
             max_amount: row.max_amount === null || row.max_amount === undefined ? '' : String(row.max_amount),
             escalation_to: row.escalation_to || '',
             remarks: row.remarks || '',
-            department: ''
+            department: row.department || ''
         });
     };
 
@@ -404,6 +405,7 @@ const ApprovalMatrix = () => {
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Level</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Approver</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Type</th>
+                                        <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Department</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Amount Range</th>
                                         <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
                                     </tr>
@@ -429,6 +431,7 @@ const ApprovalMatrix = () => {
                                                 )}
                                             </td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.approval_type || '-'}</td>
+                                            <td className="py-3 px-4 text-sm text-slate-700">{row.department || 'All'}</td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.min_amount} - {formatMaxAmount(row.max_amount)}</td>
                                             <td className="py-3 px-4 text-right">
                                                 <button
