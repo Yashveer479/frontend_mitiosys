@@ -48,6 +48,7 @@ import ApprovalAction from './pages/PurchaseRequests/ApprovalAction';
 import GeneralApprovalSystem from './pages/GeneralApprovals/GeneralApprovalSystem';
 import AdminApprovers from './pages/AdminApprovers';
 import ApprovalMatrix from './pages/ApprovalMatrix';
+import ApprovalMatrixRequestHistory from './pages/ApprovalMatrixRequestHistory';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import RoleGuard from './components/RoleGuard';
@@ -121,6 +122,7 @@ function App() {
                                 <Route path="/settings" element={<RoleGuard roles={['admin']}><Settings /></RoleGuard>} />
                                 <Route path="/admin/approvers" element={<RoleGuard roles={['admin']}><AdminApprovers /></RoleGuard>} />
                                 <Route path="/admin/approval-matrix" element={<RoleGuard roles={['admin']}><ApprovalMatrix /></RoleGuard>} />
+                                <Route path="/admin/approval-matrix/history/:id" element={<RoleGuard roles={['admin']}><ApprovalMatrixRequestHistory /></RoleGuard>} />
                                 <Route path="/profile" element={<Profile />} />
                                 <Route path="/change-password" element={<ChangePassword />} />
                                 <Route path="/change-email" element={<ChangeEmail />} />

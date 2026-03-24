@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const initialForm = {
@@ -21,6 +21,7 @@ const sanitizeApproverValue = (value) => {
 };
 
 const ApprovalMatrix = () => {
+    const navigate = useNavigate();
     const [form, setForm] = useState(initialForm);
     const [matrix, setMatrix] = useState([]);
     const [saving, setSaving] = useState(false);
@@ -29,12 +30,10 @@ const ApprovalMatrix = () => {
     const [successMsg, setSuccessMsg] = useState('');
 
     const [requests, setRequests] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [submittingRequest, setSubmittingRequest] = useState(false);
-    const [selectedRequest, setSelectedRequest] = useState(null);
-    const [actionLoading, setActionLoading] = useState(false);
-    const [actionRemarks, setActionRemarks] = useState('');
-    const { user } = useAuth();
+    const [requestSearch, setRequestSearch] = useState('');
+    const [requestStatusFilter, setRequestStatusFilter] = useState('ALL');
+    const [requestTypeFilter, setRequestTypeFilter] = useState('ALL');
 
     const loadData = async () => {
         setLoading(true);
@@ -141,26 +140,17 @@ const ApprovalMatrix = () => {
         }
     };
 
-    const handleAction = async (requestId, action) => {
-        if (!actionRemarks.trim()) {
-            alert('Please provide remarks/reason for your action.');
-            return;
-        }
-        setActionLoading(true);
+    const deleteRequest = async (requestId) => {
+        const confirmed = window.confirm(`Delete REQ-${requestId}? This will remove full approval history for this request.`);
+        if (!confirmed) return;
+
         try {
-            await api.post(`/unified-requests/${requestId}/action`, { action, remarks: actionRemarks });
-            setSuccessMsg(`Request ${action.toLowerCase()} successfully!`);
-            setActionRemarks('');
+            await api.delete(`/unified-requests/${requestId}`);
+            showSuccess(`REQ-${requestId} deleted successfully.`);
             await loadRequests();
-            // Update selected request view if open
-            const res = await api.get('/unified-requests');
-            const updated = res.data.find(r => r.id === requestId);
-            setSelectedRequest(updated);
         } catch (err) {
-            console.error('Action failed:', err);
-            alert(err?.response?.data?.msg || 'Failed to process action');
-        } finally {
-            setActionLoading(false);
+            console.error('Failed to delete request:', err);
+            alert(err?.response?.data?.msg || 'Failed to delete request');
         }
     };
 
@@ -202,6 +192,40 @@ const ApprovalMatrix = () => {
             setSubmittingRequest(false);
         }
     };
+
+    const filteredRequests = useMemo(() => {
+        const query = String(requestSearch || '').trim().toLowerCase();
+
+        return requests.filter((req) => {
+            const type = String(req.type || '').toUpperCase();
+            const status = String(req.status || '').toUpperCase();
+
+            if (requestTypeFilter !== 'ALL' && type !== requestTypeFilter) {
+                return false;
+            }
+
+            if (requestStatusFilter !== 'ALL' && status !== requestStatusFilter) {
+                return false;
+            }
+
+            if (!query) {
+                return true;
+            }
+
+            const searchable = [
+                `req-${req.id}`,
+                req.title,
+                req.type,
+                req.status,
+                req.department,
+                req.invoice_amount
+            ]
+                .map((v) => String(v || '').toLowerCase())
+                .join(' ');
+
+            return searchable.includes(query);
+        });
+    }, [requests, requestSearch, requestStatusFilter, requestTypeFilter]);
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] pb-20 p-6">
@@ -400,6 +424,50 @@ const ApprovalMatrix = () => {
                     <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                         <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Request History</h2>
                     </div>
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/40">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <input
+                                type="text"
+                                value={requestSearch}
+                                onChange={(e) => setRequestSearch(e.target.value)}
+                                placeholder="Search by REQ, title, type, amount..."
+                                className="md:col-span-2 w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                            />
+                            <select
+                                value={requestStatusFilter}
+                                onChange={(e) => setRequestStatusFilter(e.target.value)}
+                                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                            >
+                                <option value="ALL">All Status</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="APPROVED">Approved</option>
+                                <option value="REJECTED">Rejected</option>
+                            </select>
+                            <div className="flex gap-2">
+                                <select
+                                    value={requestTypeFilter}
+                                    onChange={(e) => setRequestTypeFilter(e.target.value)}
+                                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                                >
+                                    <option value="ALL">All Type</option>
+                                    <option value="PR">PR</option>
+                                    <option value="PO">PO</option>
+                                    <option value="BOTH">BOTH</option>
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setRequestSearch('');
+                                        setRequestStatusFilter('ALL');
+                                        setRequestTypeFilter('ALL');
+                                    }}
+                                    className="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-black uppercase tracking-wider hover:bg-slate-200"
+                                >
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
@@ -415,12 +483,12 @@ const ApprovalMatrix = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                                {requests.length === 0 ? (
+                                {filteredRequests.length === 0 ? (
                                     <tr>
-                                        <td colSpan="8" className="py-8 text-center text-sm text-slate-500 font-semibold">No requests generated yet.</td>
+                                        <td colSpan="8" className="py-8 text-center text-sm text-slate-500 font-semibold">No requests match current search/filter.</td>
                                     </tr>
-                                ) : requests.map((req) => (
-                                    <tr key={req.id} className={`hover:bg-slate-50/60 transition-colors ${selectedRequest?.id === req.id ? 'bg-indigo-50/50' : ''}`}>
+                                ) : filteredRequests.map((req) => (
+                                    <tr key={req.id} className="hover:bg-slate-50/60 transition-colors">
                                         <td className="py-3 px-4 text-sm font-bold text-slate-900">REQ-{req.id}</td>
                                         <td className="py-3 px-4 text-sm font-medium text-slate-800">{req.title}</td>
                                         <td className="py-3 px-4 text-sm font-bold text-indigo-600">{req.type}</td>
@@ -432,10 +500,16 @@ const ApprovalMatrix = () => {
                                         <td className="py-3 px-4 text-xs font-medium text-slate-500">{new Date(req.createdAt).toLocaleDateString()}</td>
                                         <td className="py-3 px-4 text-right">
                                             <button
-                                                onClick={() => setSelectedRequest(req)}
+                                                onClick={() => navigate(`/admin/approval-matrix/history/${req.id}`)}
                                                 className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-[10px] font-black uppercase tracking-wide hover:bg-slate-200"
                                             >
-                                                View Approvals
+                                                History
+                                            </button>
+                                            <button
+                                                onClick={() => deleteRequest(req.id)}
+                                                className="ml-2 px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 text-[10px] font-black uppercase tracking-wide hover:bg-rose-200"
+                                            >
+                                                Delete
                                             </button>
                                         </td>
                                     </tr>
@@ -444,68 +518,6 @@ const ApprovalMatrix = () => {
                         </table>
                     </div>
                 </div>
-
-                {selectedRequest && (
-                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden border-l-4 border-l-indigo-500">
-                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                            <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Approval History for REQ-{selectedRequest.id}</h2>
-                            <button onClick={() => setSelectedRequest(null)} className="text-xs font-bold text-slate-400 hover:text-slate-600 uppercase">Close</button>
-                        </div>
-                        <div className="p-4 sm:p-6 bg-slate-50/50">
-                            {selectedRequest.approvalLogs && selectedRequest.approvalLogs.length > 0 ? (
-                                <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
-                                    {[...selectedRequest.approvalLogs].sort((a, b) => a.level - b.level).map((log) => (
-                                        <div key={log.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                            <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-100 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 font-bold text-xs uppercase">
-                                                L{log.level}
-                                            </div>
-                                            <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <h3 className="font-bold text-slate-800 text-sm">{log.approver_name || log.approver_email}</h3>
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${log.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : log.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500'}`}>{log.status}</span>
-                                                </div>
-                                                <p className="text-xs text-slate-500 font-medium">
-                                                    {log.timestamp ? new Date(log.timestamp).toLocaleString() : 'Pending action'}
-                                                </p>
-                                                {log.remarks && <p className="text-xs text-slate-600 mt-2 bg-slate-50 p-2 rounded italic">"{log.remarks}"</p>}
-                                                
-                                                {/* Action Buttons for current approver */}
-                                                {log.status === 'PENDING' && user?.email?.toLowerCase() === log.approver_email?.toLowerCase() && (
-                                                    <div className="mt-4 space-y-3 pt-3 border-t border-slate-100">
-                                                        <textarea
-                                                            placeholder="Enter remarks/reason..."
-                                                            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                                                            value={actionRemarks}
-                                                            onChange={(e) => setActionRemarks(e.target.value)}
-                                                        />
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => handleAction(selectedRequest.id, 'APPROVED')}
-                                                                disabled={actionLoading}
-                                                                className="flex-1 px-3 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 disabled:opacity-50"
-                                                            >
-                                                                {actionLoading ? 'Processing...' : 'Approve'}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleAction(selectedRequest.id, 'REJECTED')}
-                                                                disabled={actionLoading}
-                                                                className="flex-1 px-3 py-2 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-rose-700 disabled:opacity-50"
-                                                            >
-                                                                Reject
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-sm text-slate-500 text-center py-4 font-semibold">No approval workflow generated for this request.</p>
-                            )}
-                        </div>
-                    </div>
-                )}
             </div>
 
             </div>
