@@ -180,7 +180,8 @@ const ApprovalMatrix = () => {
                 type: form.approval_type === 'BOTH' || form.approval_type === 'PR / PO' ? 'PR' : form.approval_type, 
                 quantity: 1, 
                 invoice_amount: Number(form.min_amount), 
-                department: form.department 
+                department: form.department,
+                runtime_escalation_to: form.escalation_to ? String(form.escalation_to).trim() : null
             };
             const res = await api.post('/unified-requests', payload);
             const levels = Number(res?.data?.workflow?.levels || 0);
