@@ -8,7 +8,8 @@ const initialForm = {
     min_amount: '',
     max_amount: '',
     escalation_to: '',
-    remarks: ''
+    remarks: '',
+    department: ''
 };
 
 const sanitizeApproverValue = (value) => {
@@ -114,7 +115,8 @@ const ApprovalMatrix = () => {
             min_amount: String(row.min_amount ?? ''),
             max_amount: row.max_amount === null || row.max_amount === undefined ? '' : String(row.max_amount),
             escalation_to: row.escalation_to || '',
-            remarks: row.remarks || ''
+            remarks: row.remarks || '',
+            department: ''
         });
     };
 
@@ -159,6 +161,10 @@ const ApprovalMatrix = () => {
             alert('Please enter a Min Amount to simulate a request.');
             return;
         }
+        if (!form.department) {
+            alert('Please select a Department for this request.');
+            return;
+        }
         setSubmittingRequest(true);
         try {
             const payload = { 
@@ -166,7 +172,7 @@ const ApprovalMatrix = () => {
                 type: form.approval_type === 'BOTH' || form.approval_type === 'PR / PO' ? 'PR' : form.approval_type, 
                 quantity: 1, 
                 invoice_amount: Number(form.min_amount), 
-                department: '' 
+                department: form.department 
             };
             const res = await api.post('/unified-requests', payload);
             const levels = Number(res?.data?.workflow?.levels || 0);
@@ -319,6 +325,26 @@ const ApprovalMatrix = () => {
                                 onChange={(e) => onChange('remarks', e.target.value)}
                                 className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
                             />
+                        </label>
+
+                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            Request Department
+                            <select
+                                value={form.department}
+                                onChange={(e) => onChange('department', e.target.value)}
+                                className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                            >
+                                <option value="">Select Department</option>
+                                <option value="Procurement">Procurement</option>
+                                <option value="Production">Production</option>
+                                <option value="Finance">Finance</option>
+                                <option value="Logistics">Logistics</option>
+                                <option value="Sales">Sales</option>
+                                <option value="Warehouse">Warehouse</option>
+                                <option value="Administration">Administration</option>
+                                <option value="HR">HR</option>
+                                <option value="IT">IT</option>
+                            </select>
                         </label>
                     </div>
 
