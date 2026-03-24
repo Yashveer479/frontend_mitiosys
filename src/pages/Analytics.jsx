@@ -128,11 +128,29 @@ const Analytics = () => {
         { label: 'Stock Turnover', value: summary?.stockTurnover || '0x', change: '+0.8x', trend: 'up', icon: TrendingUp, color: 'indigo' }
     ];
 
-    // Chart Data mapping
-    const salesDataPoints = salesReport.length > 0 ? salesReport.map(s => {
-        const val = parseFloat(s.revenue || s.total || 0);
-        return isNaN(val) ? 0 : (val / 1000000).toFixed(1);
-    }) : [0, 0, 0, 0, 0, 0];
+    // Chart Data mapping with dynamic scaling so small values remain visible
+    const salesDataPoints = salesReport.length > 0
+        ? salesReport.map((s) => {
+            const val = parseFloat(s.revenue || s.total || 0);
+            return Number.isNaN(val) ? 0 : val;
+        })
+        : [0, 0, 0, 0, 0, 0];
+
+    const chartMaxValue = Math.max(...salesDataPoints, 1);
+    const chartHeight = 220;
+    const chartTopPadding = 12;
+    const chartBottom = chartTopPadding + chartHeight;
+
+    const getChartY = (value) => {
+        const ratio = Math.max(0, Math.min(1, value / chartMaxValue));
+        return chartBottom - (ratio * chartHeight);
+    };
+
+    const linePath = salesDataPoints
+        .map((value, i) => `${i === 0 ? 'M' : 'L'}${(i / Math.max(1, salesDataPoints.length - 1)) * 100},${getChartY(value)}`)
+        .join(' ');
+
+    const areaPath = `${linePath} V256 H0 Z`;
 
     // Inventory Mix processing
     const categories = [...new Set(inventoryReport.map(i => i.category))];
@@ -268,7 +286,7 @@ const Analytics = () => {
                             {/* SVG Path for smoother look */}
                             <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 100 256" preserveAspectRatio="none">
                                 <path
-                                    d={`M0,${256 - (salesDataPoints[0] * 2)} ${salesDataPoints.map((val, i) => `L${(i / (salesDataPoints.length - 1)) * 100},${256 - (val * 2)}`).join(' ')}`}
+                                    d={linePath}
                                     fill="none"
                                     stroke="#3B82F6"
                                     strokeWidth="3"
@@ -282,11 +300,7 @@ const Analytics = () => {
                                         <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
                                     </linearGradient>
                                 </defs>
-                                <path
-                                    d={`M0,${256 - (salesDataPoints[0] * 2)} ${salesDataPoints.map((val, i) => `L${(i / (salesDataPoints.length - 1)) * 100},${256 - (val * 2)}`).join(' ')} V256 H0 Z`}
-                                    fill="url(#gradient)"
-                                    stroke="none"
-                                />
+                                <path d={areaPath} fill="url(#gradient)" stroke="none" />
                             </svg>
 
                             {/* Tooltip Hover Area (Visual Only) */}
@@ -294,7 +308,7 @@ const Analytics = () => {
                                 <div key={i} className="group relative h-full w-full flex items-end z-10 cursor-pointer">
                                     <div className="w-full bg-transparent hover:bg-slate-900/5 transition-colors rounded-t-lg"></div>
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex bg-slate-900 text-white text-xs font-bold py-1 px-2 rounded shadow-xl whitespace-nowrap">
-                                        UGX {val}M
+                                        UGX {Number(val || 0).toLocaleString()}
                                     </div>
                                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-6 text-[10px] font-bold text-slate-400">
                                         {salesReport[i]?.date ? new Date(salesReport[i].date).toLocaleDateString() : i + 1}
