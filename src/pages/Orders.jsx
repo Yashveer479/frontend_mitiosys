@@ -12,6 +12,9 @@ const Orders = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [typeFilter, setTypeFilter] = useState('ALL');
+    const [paymentInputs, setPaymentInputs] = useState({});
+    const [paymentNotes, setPaymentNotes] = useState({});
+    const [paymentUpdatingByOrder, setPaymentUpdatingByOrder] = useState({});
     const isPendingOrdersView = location.pathname === '/sales/pending';
 
     const fetchOrders = async () => {
@@ -65,6 +68,42 @@ const Orders = () => {
                 alert(`${type} generation initiated for Order #${orderId}`);
                 setGenerating(false);
             }, 1000);
+        }
+    };
+
+    const normalizeMoney = (value) => {
+        const parsed = Number.parseFloat(value || 0);
+        return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const getOrderPaidAmount = (order) => normalizeMoney(order.paidAmount);
+
+    const getOrderDueAmount = (order) => {
+        const total = normalizeMoney(order.totalAmount);
+        const due = total - getOrderPaidAmount(order);
+        return due > 0 ? due : 0;
+    };
+
+    const handleReceivePayment = async (order) => {
+        const raw = paymentInputs[order.id];
+        const amountReceived = normalizeMoney(raw);
+        const note = String(paymentNotes[order.id] || '').trim();
+
+        if (amountReceived <= 0) {
+            alert('Enter a valid payment amount greater than 0.');
+            return;
+        }
+
+        setPaymentUpdatingByOrder((prev) => ({ ...prev, [order.id]: true }));
+        try {
+            await api.patch(`/orders/${order.id}/payment`, { amountReceived, note });
+            setPaymentInputs((prev) => ({ ...prev, [order.id]: '' }));
+            setPaymentNotes((prev) => ({ ...prev, [order.id]: '' }));
+            await fetchOrders();
+        } catch (err) {
+            alert(err.response?.data?.msg || 'Failed to update payment.');
+        } finally {
+            setPaymentUpdatingByOrder((prev) => ({ ...prev, [order.id]: false }));
         }
     };
 
@@ -159,12 +198,23 @@ const Orders = () => {
                             <div className="flex items-center space-x-8">
                                 <div className="text-right">
                                     <p className="text-lg font-bold text-slate-900 tracking-tight mb-1">${(order.totalAmount || 0).toLocaleString()}</p>
-                                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${order.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                    <div className="flex items-center justify-end gap-2 mb-1">
+                                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${String(order.paymentStatus || '').toLowerCase() === 'paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                            String(order.paymentStatus || '').toLowerCase() === 'partial' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                'bg-rose-50 text-rose-700 border-rose-200'
+                                            }`}>
+                                            {order.paymentStatus || 'Unpaid'}
+                                        </span>
+                                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${order.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                         order.status === 'Processing' ? 'bg-amber-50 text-amber-600 border-amber-100' :
                                             'bg-slate-50 text-slate-500 border-slate-200'
                                         }`}>
                                         {order.status}
                                     </span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">
+                                        Paid ${getOrderPaidAmount(order).toLocaleString()} • Due ${getOrderDueAmount(order).toLocaleString()}
+                                    </p>
                                 </div>
                                 <div className="text-slate-300">
                                     {expandedOrder === order.id ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
@@ -225,6 +275,68 @@ const Orders = () => {
                                                 <span className="text-emerald-600 font-bold uppercase tracking-wider flex items-center gap-1">
                                                     <CheckCircle2 size={12} /> Passed
                                                 </span>
+                                            </div>
+
+                                            <div className="pt-4 border-t border-slate-200 space-y-3">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Payment Collection</p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        step="0.01"
+                                                        value={paymentInputs[order.id] ?? ''}
+                                                        onChange={(e) => setPaymentInputs((prev) => ({ ...prev, [order.id]: e.target.value }))}
+                                                        placeholder="Enter received amount"
+                                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleReceivePayment(order)}
+                                                        disabled={!!paymentUpdatingByOrder[order.id] || getOrderDueAmount(order) <= 0}
+                                                        className="px-4 py-2 rounded-lg bg-primary text-white text-[10px] font-black uppercase tracking-wider hover:bg-blue-700 transition-all disabled:opacity-50"
+                                                    >
+                                                        {paymentUpdatingByOrder[order.id] ? 'Updating...' : 'Receive Payment'}
+                                                    </button>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    maxLength={255}
+                                                    value={paymentNotes[order.id] ?? ''}
+                                                    onChange={(e) => setPaymentNotes((prev) => ({ ...prev, [order.id]: e.target.value }))}
+                                                    placeholder="Payment note (optional, e.g. Bank transfer ref)"
+                                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                                />
+                                                <p className="text-[10px] text-slate-500 font-semibold">
+                                                    Outstanding: ${getOrderDueAmount(order).toLocaleString()}
+                                                </p>
+
+                                                <div className="pt-3 border-t border-slate-200 space-y-2">
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Payment History</p>
+                                                    {Array.isArray(order.paymentHistory) && order.paymentHistory.length > 0 ? (
+                                                        <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                                                            {order.paymentHistory.map((entry) => (
+                                                                <div key={entry.id} className="rounded-lg border border-slate-200 bg-white p-2.5">
+                                                                    <div className="flex items-center justify-between gap-2">
+                                                                        <p className="text-[11px] font-black text-slate-800">
+                                                                            +${normalizeMoney(entry.amount).toLocaleString()}
+                                                                        </p>
+                                                                        <p className="text-[10px] font-semibold text-slate-400">
+                                                                            {new Date(entry.createdAt).toLocaleString()}
+                                                                        </p>
+                                                                    </div>
+                                                                    <p className="text-[10px] font-semibold text-slate-500 mt-1">
+                                                                        Received by: {entry.receivedBy?.name || 'Unknown'}
+                                                                    </p>
+                                                                    {entry.note && (
+                                                                        <p className="text-[10px] text-slate-500 mt-1">Note: {entry.note}</p>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-[10px] font-semibold text-slate-400">No payment entries yet.</p>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
