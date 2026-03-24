@@ -19,8 +19,8 @@ import {
     AlertCircle,
     Globe
 } from 'lucide-react';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Customers = () => {
     const [customers, setCustomers] = useState([]);
@@ -142,45 +142,54 @@ const Customers = () => {
     };
 
     const handlePdfExport = () => {
-        const doc = new jsPDF();
-        
-        // Add title
-        doc.setFontSize(18);
-        doc.text('Customer Relations', 14, 22);
+        if (!filteredCustomers.length) {
+            alert('No customers available to export.');
+            return;
+        }
 
-        // Define columns and rows
-        const columns = ['Name', 'Contact', 'Email', 'Phone', 'Address', 'Country', 'TaxId', 'TIN', 'VRN'];
-        const rows = filteredCustomers.map((c) => [
-            c.name || '',
-            c.contact || '',
-            c.email || '',
-            c.phone || '',
-            c.address || '',
-            c.country || '',
-            c.taxId || '',
-            c.tin || '',
-            c.vrn || ''
-        ]);
+        try {
+            const doc = new jsPDF();
 
-        // Add table
-        doc.autoTable({
-            head: [columns],
-            body: rows,
-            startY: 30,
-            theme: 'grid',
-            styles: {
-                fontSize: 8,
-                cellPadding: 2,
-            },
-            headStyles: {
-                fillColor: [22, 160, 133], // A nice shade of green
-                textColor: 255,
-                fontStyle: 'bold',
-            },
-        });
+            doc.setFontSize(18);
+            doc.text('Customer Relations', 14, 22);
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Exported: ${new Date().toLocaleString()}`, 14, 28);
 
-        // Save the PDF
-        doc.save(`customers_${new Date().toISOString().split('T')[0]}.pdf`);
+            const columns = ['Name', 'Contact', 'Email', 'Phone', 'Address', 'Country', 'Tax ID', 'TIN', 'VRN'];
+            const rows = filteredCustomers.map((c) => [
+                c.name || '',
+                c.contact || '',
+                c.email || '',
+                c.phone || '',
+                c.address || '',
+                c.country || '',
+                c.taxId || '',
+                c.tin || '',
+                c.vrn || ''
+            ]);
+
+            autoTable(doc, {
+                head: [columns],
+                body: rows,
+                startY: 34,
+                theme: 'grid',
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 2
+                },
+                headStyles: {
+                    fillColor: [22, 160, 133],
+                    textColor: 255,
+                    fontStyle: 'bold'
+                }
+            });
+
+            doc.save(`customers_${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (error) {
+            console.error('Customer export failed:', error);
+            alert('Failed to export customer PDF. Please try again.');
+        }
     };
 
     const filteredCustomers = customers.filter(c =>
