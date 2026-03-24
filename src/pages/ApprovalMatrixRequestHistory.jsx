@@ -26,6 +26,13 @@ const formatDateTime = (value) => {
     return date.toLocaleString();
 };
 
+const formatMaxAmount = (value) => {
+    if (value === null || value === undefined || value === '') return 'Unlimited';
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric <= 0) return 'Unlimited';
+    return value;
+};
+
 const ApprovalMatrixRequestHistory = () => {
     const navigate = useNavigate();
     const { id } = useParams();
@@ -155,7 +162,7 @@ const ApprovalMatrixRequestHistory = () => {
                                         <td className="py-3 px-4 text-sm text-slate-700">{row.approver_name || row.approver_email || '-'}</td>
                                         <td className="py-3 px-4 text-sm text-slate-700">{row.approval_type || '-'}</td>
                                         <td className="py-3 px-4 text-sm text-slate-700">{row.min_amount}</td>
-                                        <td className="py-3 px-4 text-sm text-slate-700">{row.max_amount ?? 'Unlimited'}</td>
+                                        <td className="py-3 px-4 text-sm text-slate-700">{formatMaxAmount(row.max_amount)}</td>
                                         <td className="py-3 px-4 text-sm text-slate-700">{row.escalation_to || '-'}</td>
                                     </tr>
                                 ))}

@@ -21,6 +21,13 @@ const sanitizeApproverValue = (value) => {
     return normalized;
 };
 
+const formatMaxAmount = (value) => {
+    if (value === null || value === undefined || value === '') return 'Unlimited';
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric <= 0) return 'Unlimited';
+    return value;
+};
+
 const ApprovalMatrix = () => {
     const navigate = useNavigate();
     const [form, setForm] = useState(initialForm);
@@ -83,7 +90,7 @@ const ApprovalMatrix = () => {
                 level: Number(form.level),
                 approval_type: form.approval_type,
                 min_amount: Number(form.min_amount),
-                max_amount: form.max_amount === '' ? null : Number(form.max_amount),
+                max_amount: form.max_amount === '' || Number(form.max_amount) <= 0 ? null : Number(form.max_amount),
                 escalation_to: form.escalation_to ? String(form.escalation_to).trim() : null,
                 remarks: form.remarks || null
             };
@@ -419,7 +426,7 @@ const ApprovalMatrix = () => {
                                                 )}
                                             </td>
                                             <td className="py-3 px-4 text-sm text-slate-700">{row.approval_type || '-'}</td>
-                                            <td className="py-3 px-4 text-sm text-slate-700">{row.min_amount} - {row.max_amount ?? 'Unlimited'}</td>
+                                            <td className="py-3 px-4 text-sm text-slate-700">{row.min_amount} - {formatMaxAmount(row.max_amount)}</td>
                                             <td className="py-3 px-4 text-right">
                                                 <button
                                                     type="button"
