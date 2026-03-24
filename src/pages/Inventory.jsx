@@ -14,7 +14,9 @@ import {
     Download,
     X,
     Save,
-    RefreshCw
+    RefreshCw,
+    Edit2,
+    Trash2
 } from 'lucide-react';
 
 import { jsPDF } from 'jspdf';
@@ -36,6 +38,8 @@ const Inventory = () => {
         batchNumber: ''
     });
     const [saving, setSaving] = useState(false);
+    const [editingItem, setEditingItem] = useState(null);
+    const [activeActionMenu, setActiveActionMenu] = useState(null);
 
     // Filter States
     const [filters, setFilters] = useState({
@@ -143,6 +147,7 @@ const Inventory = () => {
     };
 
     const handleOpenModal = () => {
+        setEditingItem(null);
         setFormData({
             sku: '',
             warehouseId: '',
@@ -154,21 +159,59 @@ const Inventory = () => {
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
+        setEditingItem(null);
+        setActiveActionMenu(null);
+    };
+
+    const handleOpenEditModal = (item) => {
+        setEditingItem(item);
+        setFormData({
+            sku: item.sku || '',
+            warehouseId: item.warehouse?.id ? String(item.warehouse.id) : '',
+            quantity: item.quantity || 0,
+            batchNumber: item.batchNumber || ''
+        });
+        setIsModalOpen(true);
+        setActiveActionMenu(null);
+    };
+
+    const handleDeleteRow = async (item) => {
+        setActiveActionMenu(null);
+        const ok = window.confirm(`Delete inventory row for ${item.name}? This only removes this stock row.`);
+        if (!ok) return;
+
+        try {
+            await api.delete(`/inventory/item/${item.inventoryId}`);
+            await fetchData();
+        } catch (err) {
+            const detail = err.response?.data?.msg || 'Delete failed.';
+            console.error('Failed to delete inventory row', err);
+            alert(detail);
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
         try {
-            const selectedProduct = availableProducts.find(p => p.sku === formData.sku);
-            const payload = {
-                ...formData,
-                name: selectedProduct?.name || 'Unknown',
-                category: selectedProduct?.category || 'General',
-                price: selectedProduct?.price || 0
-            };
+            if (editingItem) {
+                await api.put(`/inventory/item/${editingItem.inventoryId}`, {
+                    quantity: formData.quantity,
+                    warehouseId: formData.warehouseId,
+                    batchNumber: formData.batchNumber
+                });
+            } else {
+                const selectedProduct = availableProducts.find(p => p.sku === formData.sku);
+                const payload = {
+                    ...formData,
+                    name: selectedProduct?.name || 'Unknown',
+                    category: selectedProduct?.category || 'General',
+                    price: selectedProduct?.price || 0
+                };
 
-            await api.post('/inventory', payload);
+                await api.post('/inventory', payload);
+            }
+
             setSearchTerm(''); // clear search so the updated item is visible
             await fetchData();
             handleCloseModal();
@@ -316,7 +359,7 @@ const Inventory = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-50">
                                 {filteredProducts.map((p) => (
-                                    <tr key={p.id + (p.warehouse?.id || 'unassigned')} className="group hover:bg-slate-50/50 transition-colors">
+                                    <tr key={p.inventoryId || (p.id + (p.warehouse?.id || 'unassigned'))} className="group hover:bg-slate-50/50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center space-x-4">
                                                 <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 border border-slate-200 group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
@@ -350,10 +393,33 @@ const Inventory = () => {
                                             <span className="text-[9px] text-slate-400 font-bold uppercase ml-1">Units</span>
                                         </td>
 
-                                        <td className="px-6 py-4">
-                                            <button className="text-slate-300 hover:text-blue-600 transition-colors">
+                                        <td className="px-6 py-4 relative">
+                                            <button
+                                                onClick={() => setActiveActionMenu(activeActionMenu === p.inventoryId ? null : p.inventoryId)}
+                                                className="text-slate-300 hover:text-blue-600 transition-colors"
+                                                title="Row actions"
+                                            >
                                                 <MoreHorizontal size={16} />
                                             </button>
+
+                                            {activeActionMenu === p.inventoryId && (
+                                                <div className="absolute right-6 top-10 z-20 w-36 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+                                                    <button
+                                                        onClick={() => handleOpenEditModal(p)}
+                                                        className="w-full px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+                                                    >
+                                                        <Edit2 size={13} />
+                                                        <span>Edit Row</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteRow(p)}
+                                                        className="w-full px-3 py-2.5 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100"
+                                                    >
+                                                        <Trash2 size={13} />
+                                                        <span>Delete Row</span>
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -367,7 +433,7 @@ const Inventory = () => {
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
                         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100">
                             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                                <h3 className="text-lg font-black text-slate-800 tracking-tight">Receive Inventory</h3>
+                                <h3 className="text-lg font-black text-slate-800 tracking-tight">{editingItem ? 'Edit Inventory Row' : 'Receive Inventory'}</h3>
                                 <button onClick={handleCloseModal} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all">
                                     <X size={20} />
                                 </button>
@@ -381,6 +447,7 @@ const Inventory = () => {
                                             value={formData.sku}
                                             onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                                             required
+                                            disabled={!!editingItem}
                                         >
                                             <option value="">Select Product...</option>
                                             {availableProducts.map(prod => (
@@ -444,7 +511,7 @@ const Inventory = () => {
                                     ) : (
                                         <>
                                             <Save size={16} />
-                                            <span>Update Inventory</span>
+                                            <span>{editingItem ? 'Save Changes' : 'Update Inventory'}</span>
                                         </>
                                     )}
                                 </button>
