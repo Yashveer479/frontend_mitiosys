@@ -7,7 +7,7 @@ const initialForm = {
     approval_type: 'PR',
     min_amount: '',
     max_amount: '',
-    escalation_to: '',
+    runtime_escalation_to: '',
     remarks: '',
     department: ''
 };
@@ -92,7 +92,6 @@ const ApprovalMatrix = () => {
                 approval_type: form.approval_type,
                 min_amount: Number(form.min_amount),
                 max_amount: form.max_amount === '' || Number(form.max_amount) <= 0 ? null : Number(form.max_amount),
-                escalation_to: form.escalation_to ? String(form.escalation_to).trim() : null,
                 remarks: form.remarks || null
             };
 
@@ -122,7 +121,7 @@ const ApprovalMatrix = () => {
             approval_type: row.approval_type || 'PR',
             min_amount: String(row.min_amount ?? ''),
             max_amount: row.max_amount === null || row.max_amount === undefined ? '' : String(row.max_amount),
-            escalation_to: row.escalation_to || '',
+            runtime_escalation_to: '',
             remarks: row.remarks || '',
             department: row.department || ''
         });
@@ -181,7 +180,7 @@ const ApprovalMatrix = () => {
                 quantity: 1, 
                 invoice_amount: Number(form.min_amount), 
                 department: form.department,
-                runtime_escalation_to: form.escalation_to ? String(form.escalation_to).trim() : null
+                runtime_escalation_to: form.runtime_escalation_to ? String(form.runtime_escalation_to).trim() : null
             };
             const res = await api.post('/unified-requests', payload);
             const levels = Number(res?.data?.workflow?.levels || 0);
@@ -315,17 +314,6 @@ const ApprovalMatrix = () => {
                             />
                         </label>
 
-                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                            Escalation Level
-                            <input
-                                type="text"
-                                value={form.escalation_to}
-                                onChange={(e) => onChange('escalation_to', e.target.value)}
-                                className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
-                                placeholder="e.g. Level 2 or Final Approval"
-                            />
-                        </label>
-
                         <label className="text-xs font-bold text-slate-700 uppercase tracking-wider md:col-span-2">
                             Remarks
                             <input
@@ -357,6 +345,17 @@ const ApprovalMatrix = () => {
                                 <option value="HR">HR</option>
                                 <option value="IT">IT</option>
                             </select>
+                        </label>
+
+                        <label className="text-xs font-bold text-indigo-700 uppercase tracking-wider md:col-span-2 lg:col-span-3">
+                            Runtime Escalation (Simulation Only)
+                            <input
+                                type="text"
+                                value={form.runtime_escalation_to}
+                                onChange={(e) => onChange('runtime_escalation_to', e.target.value)}
+                                className="mt-1 w-full bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2 text-sm"
+                                placeholder="Optional. e.g. 4 or Level 5. Not saved in matrix rules."
+                            />
                         </label>
                     </div>
 
