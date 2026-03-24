@@ -362,6 +362,12 @@ const GeneralApprovalSystem = () => {
                              <div className="space-y-4">
                                 {['first_level', 'second_level', 'third_level'].map((lvlKey, idx) => {
                                     const role = detailedRequest[lvlKey];
+                                    const rejectLog = Array.isArray(detailedRequest.logs)
+                                        ? detailedRequest.logs.find((log) => String(log.action || '').toLowerCase() === 'reject')
+                                        : null;
+                                    const rejectedRole = String(rejectLog?.role || '').toUpperCase();
+                                    const isRejectedRequest = String(detailedRequest.status || '').toUpperCase() === 'REJECTED';
+                                    const isRejectedStage = isRejectedRequest && rejectedRole === String(role || '').toUpperCase();
                                     const isApproved = 
                                         (idx === 0 && detailedRequest.first_approved_by) ||
                                         (idx === 1 && detailedRequest.second_approved_by) ||
@@ -379,19 +385,45 @@ const GeneralApprovalSystem = () => {
                                         idx === 1 ? detailedRequest.secondApprover?.name :
                                         idx === 2 ? detailedRequest.thirdApprover?.name : 'Pending';
 
+                                    const stageState = isRejectedStage ? 'rejected' : (isApproved ? 'approved' : (isRejectedRequest ? 'stopped' : 'pending'));
+
                                     return (
                                         <div key={idx} className="flex items-center gap-3">
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 ${
-                                                isApproved ? 'bg-emerald-50 border-emerald-500 text-emerald-600' : 'bg-slate-50 border-slate-200 text-slate-300'
+                                                stageState === 'approved'
+                                                    ? 'bg-emerald-50 border-emerald-500 text-emerald-600'
+                                                    : stageState === 'rejected'
+                                                        ? 'bg-rose-50 border-rose-500 text-rose-600'
+                                                        : stageState === 'stopped'
+                                                            ? 'bg-slate-100 border-slate-300 text-slate-400'
+                                                            : 'bg-slate-50 border-slate-200 text-slate-300'
                                             }`}>
-                                                {isApproved ? <Check size={14} strokeWidth={3} /> : <span className="text-xs font-black">{idx + 1}</span>}
+                                                {stageState === 'approved'
+                                                    ? <Check size={14} strokeWidth={3} />
+                                                    : stageState === 'rejected'
+                                                        ? <X size={14} strokeWidth={3} />
+                                                        : <span className="text-xs font-black">{idx + 1}</span>}
                                             </div>
                                             <div>
-                                                <p className={`text-xs font-black uppercase tracking-wider ${isApproved ? 'text-emerald-700' : 'text-slate-400'}`}>
+                                                <p className={`text-xs font-black uppercase tracking-wider ${
+                                                    stageState === 'approved'
+                                                        ? 'text-emerald-700'
+                                                        : stageState === 'rejected'
+                                                            ? 'text-rose-700'
+                                                            : stageState === 'stopped'
+                                                                ? 'text-slate-500'
+                                                                : 'text-slate-400'
+                                                }`}>
                                                     {role} Approval
                                                 </p>
                                                 <p className="text-[10px] font-bold text-slate-500">
-                                                    {isApproved ? (approverName || 'Approved') : 'Pending'}
+                                                    {stageState === 'approved'
+                                                        ? (approverName || 'Approved')
+                                                        : stageState === 'rejected'
+                                                            ? `Rejected by ${rejectLog?.approver?.name || 'Approver'}`
+                                                            : stageState === 'stopped'
+                                                                ? 'Stopped after rejection'
+                                                                : 'Pending'}
                                                 </p>
                                             </div>
                                         </div>
