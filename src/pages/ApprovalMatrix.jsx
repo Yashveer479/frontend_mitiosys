@@ -347,16 +347,18 @@ const ApprovalMatrix = () => {
                             </select>
                         </label>
 
-                        <label className="text-xs font-bold text-indigo-700 uppercase tracking-wider md:col-span-2 lg:col-span-3">
-                            Runtime Escalation (Simulation Only)
-                            <input
-                                type="text"
-                                value={form.runtime_escalation_to}
-                                onChange={(e) => onChange('runtime_escalation_to', e.target.value)}
-                                className="mt-1 w-full bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2 text-sm"
-                                placeholder="Optional. e.g. 4 or Level 5. Not saved in matrix rules."
-                            />
-                        </label>
+                        {!editingId && (
+                            <label className="text-xs font-bold text-indigo-700 uppercase tracking-wider md:col-span-2 lg:col-span-3">
+                                Runtime Escalation (Simulation Only)
+                                <input
+                                    type="text"
+                                    value={form.runtime_escalation_to}
+                                    onChange={(e) => onChange('runtime_escalation_to', e.target.value)}
+                                    className="mt-1 w-full bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2 text-sm"
+                                    placeholder="Optional. e.g. 4 or Level 5. Not saved in matrix rules."
+                                />
+                            </label>
+                        )}
                     </div>
 
                     <div className="mt-5 flex justify-between items-center sm:flex-row flex-col gap-4">
