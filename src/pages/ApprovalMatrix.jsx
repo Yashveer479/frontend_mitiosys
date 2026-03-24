@@ -342,9 +342,12 @@ const ApprovalMatrix = () => {
                                 className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
                             >
                                 <option value="">Select Department</option>
+                                <option value="Department Head">Department Head</option>
                                 <option value="Procurement">Procurement</option>
                                 <option value="Production">Production</option>
                                 <option value="Finance">Finance</option>
+                                <option value="Director">Director</option>
+                                <option value="CEO">CEO</option>
                                 <option value="Logistics">Logistics</option>
                                 <option value="Sales">Sales</option>
                                 <option value="Warehouse">Warehouse</option>
