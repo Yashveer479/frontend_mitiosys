@@ -137,42 +137,6 @@ const ApprovalMatrixRequestHistory = () => {
 
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-100">
-                        <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Matching Matrix Rules</h2>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-slate-50 border-b border-slate-100">
-                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Level</th>
-                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Approver</th>
-                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Type</th>
-                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Min</th>
-                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Max</th>
-                                    <th className="py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Escalation To</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {(details?.matchingRules || []).length === 0 ? (
-                                    <tr>
-                                        <td colSpan="6" className="py-6 px-4 text-sm text-slate-500">No matching matrix rules found for this request.</td>
-                                    </tr>
-                                ) : (details?.matchingRules || []).map((row) => (
-                                    <tr key={row.id}>
-                                        <td className="py-3 px-4 text-sm font-semibold text-slate-800">L{row.level}</td>
-                                        <td className="py-3 px-4 text-sm text-slate-700">{row.approver_name || row.approver_email || '-'}</td>
-                                        <td className="py-3 px-4 text-sm text-slate-700">{row.approval_type || '-'}</td>
-                                        <td className="py-3 px-4 text-sm text-slate-700">{row.min_amount}</td>
-                                        <td className="py-3 px-4 text-sm text-slate-700">{formatMaxAmount(row.max_amount)}</td>
-                                        <td className="py-3 px-4 text-sm text-slate-700">{row.escalation_to || '-'}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-100">
                         <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Approval And Escalation Timeline</h2>
                     </div>
                     <div className="overflow-x-auto">
