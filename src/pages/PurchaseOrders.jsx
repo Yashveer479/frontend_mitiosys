@@ -300,10 +300,11 @@ const PurchaseOrders = () => {
                                             <td className="px-4 py-3">
                                                 <button
                                                     onClick={() => navigate(`/inventory/purchase-orders/requests/${entry.id}`)}
-                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-wider text-blue-700 hover:bg-blue-100 transition-all"
                                                     title="Open POR details"
                                                 >
-                                                    <Eye size={16} />
+                                                    <Eye size={13} />
+                                                    <span>Open POR Page</span>
                                                 </button>
                                             </td>
                                         </tr>
