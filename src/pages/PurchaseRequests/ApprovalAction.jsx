@@ -225,16 +225,22 @@ const ApprovalAction = () => {
 
                             {isPoRequestApproval && actionFromUrl === 'approve' && Array.isArray(request.supplierOptions) && request.supplierOptions.length > 0 && (
                                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                                    <p className="text-sm font-semibold text-slate-700 mb-2">Select Supplier Quotation (single choice)</p>
+                                    <p className="text-sm font-semibold text-slate-700 mb-2">Select Supplier Quotation (tick one checkbox)</p>
                                     <div className="space-y-2">
                                         {request.supplierOptions.map((row) => (
                                             <label key={row.id} className="flex items-start gap-2 rounded-md border border-slate-200 bg-white p-3 cursor-pointer">
                                                 <input
-                                                    type="radio"
+                                                    type="checkbox"
                                                     name="po_supplier_option"
                                                     value={row.id}
                                                     checked={String(selectedSupplierOptionId) === String(row.id)}
-                                                    onChange={(e) => setSelectedSupplierOptionId(e.target.value)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedSupplierOptionId(e.target.value);
+                                                        } else {
+                                                            setSelectedSupplierOptionId('');
+                                                        }
+                                                    }}
                                                     className="mt-1"
                                                 />
                                                 <span className="text-sm text-slate-700">
