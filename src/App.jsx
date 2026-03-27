@@ -144,6 +144,10 @@ function App() {
                                 <Route path="/inventory/adjustment" element={<StockAdjustment />} />
                                 <Route path="/purchase-requests" element={<PurchaseRequestSystem />} />
                                 <Route path="/purchase-requests/:id" element={<PurchaseRequestSystem />} />
+                                <Route path="/production/purchase-requests" element={<PurchaseRequestSystem />} />
+                                <Route path="/production/purchase-requests/:id" element={<PurchaseRequestSystem />} />
+                                <Route path="/lamination/purchase-requests" element={<PurchaseRequestSystem />} />
+                                <Route path="/lamination/purchase-requests/:id" element={<PurchaseRequestSystem />} />
                                 <Route path="/general-approvals" element={<GeneralApprovalSystem />} />
                                 <Route path="/general-approvals/:id" element={<GeneralApprovalSystem />} />
                             </Route>

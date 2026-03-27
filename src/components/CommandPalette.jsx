@@ -12,9 +12,11 @@ const allCommands = [
     { name: 'Thickness Processing', path: '/production/thickness', icon: <SlidersHorizontal size={16} />, category: 'Production' },
     { name: 'Sanding Processing', path: '/production/sanding', icon: <Wrench size={16} />, category: 'Production' },
     { name: 'Grading', path: '/production/grading', icon: <FileCheck size={16} />, category: 'Production' },
+    { name: 'Production Purchase Requests', path: '/production/purchase-requests', icon: <File size={16} />, category: 'Production' },
     { name: 'Production Transfer', path: '/warehouse/transfer', icon: <GitBranch size={16} />, category: 'Production' },
     { name: 'Send to Lamination', path: '/warehouse/lamination', icon: <GitBranch size={16} />, category: 'Production' },
     { name: 'Lamination Department', path: '/lamination/process', icon: <Factory size={16} />, category: 'Production' },
+    { name: 'Lamination Purchase Requests', path: '/lamination/purchase-requests', icon: <File size={16} />, category: 'Production' },
     { name: 'Warehouse Inventory', path: '/warehouse/inventory', icon: <Warehouse size={16} />, category: 'Production' },
 
     // Inventory

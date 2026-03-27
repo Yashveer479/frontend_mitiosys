@@ -31,6 +31,13 @@ const PurchaseRequestSystem = () => {
     const query = new URLSearchParams(location.search);
     const forceLogin = query.get('forceLogin') === '1';
     const approverEmail = String(query.get('approverEmail') || '').trim().toLowerCase();
+    const purchaseRequestBasePath = useMemo(() => {
+        if (location.pathname.startsWith('/production/purchase-requests')) return '/production/purchase-requests';
+        if (location.pathname.startsWith('/lamination/purchase-requests')) return '/lamination/purchase-requests';
+        return '/purchase-requests';
+    }, [location.pathname]);
+
+    const toRequestPath = (suffix = '') => `${purchaseRequestBasePath}${suffix}`;
 
     useEffect(() => {
         const enforceApproverLogin = async () => {
@@ -93,7 +100,7 @@ const PurchaseRequestSystem = () => {
             console.error(`Failed to fetch single request ${id}`, error);
             // If the request is not found, maybe navigate back or show a specific message
             if (error.response && error.response.status === 404) {
-                navigate('/purchase-requests');
+                navigate(toRequestPath(''));
             }
         }
     };
@@ -130,11 +137,11 @@ const PurchaseRequestSystem = () => {
     }, [routeRequestId, requests]); // Add `requests` as a dependency
 
     const handleViewDetails = (id) => {
-        navigate(`/purchase-requests/${id}`);
+        navigate(toRequestPath(`/${id}`));
     };
 
     const handleBackToList = () => {
-        navigate('/purchase-requests');
+        navigate(toRequestPath(''));
         setFilter('all');
     };
 
@@ -144,7 +151,7 @@ const PurchaseRequestSystem = () => {
 
     const handleRequestCreated = () => {
         fetchRequests();
-        navigate('/purchase-requests');
+        navigate(toRequestPath(''));
     };
 
     const canDeleteRequest = (request) => {
@@ -162,7 +169,7 @@ const PurchaseRequestSystem = () => {
         try {
             await api.delete(`/requests/${request.id}`);
             if (selectedRequestId && Number(selectedRequestId) === Number(request.id)) {
-                navigate('/purchase-requests');
+                navigate(toRequestPath(''));
             }
             await fetchRequests();
             window.alert(`Request #PR-${request.id} deleted successfully.`);
@@ -211,7 +218,7 @@ const PurchaseRequestSystem = () => {
                 </div>
                 <div className="flex items-center gap-3">
                     <button 
-                        onClick={() => navigate('/purchase-requests/new')}
+                        onClick={() => navigate(toRequestPath('/new'))}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700`}
                     >
                         <Plus size={18} />

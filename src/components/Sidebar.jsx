@@ -28,6 +28,7 @@ const groups = [
             { name: 'Thickness Processing', path: '/production/thickness', icon: Gauge },
             { name: 'Sanding Processing', path: '/production/sanding', icon: Zap },
             { name: 'Grading', path: '/production/grading', icon: FlaskConical },
+            { name: 'Purchase Requests', path: '/production/purchase-requests', icon: ClipboardList },
             { name: 'Production Transfer', path: '/warehouse/transfer', icon: ArrowRightLeft },
             { name: 'Send to Lamination', path: '/warehouse/lamination', icon: Layers },
         ]
@@ -40,6 +41,7 @@ const groups = [
         paths: ['/lamination', '/warehouse/inventory'],
         items: [
             { name: 'Lamination Dept', path: '/lamination/process', icon: Layers },
+            { name: 'Purchase Requests', path: '/lamination/purchase-requests', icon: ClipboardList },
             { name: 'Warehouse Inventory', path: '/warehouse/inventory', icon: Warehouse },
         ]
     },
