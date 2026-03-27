@@ -140,7 +140,7 @@ const ApprovalAction = () => {
         : null;
 
     useEffect(() => {
-        if (actionFromUrl === 'approve' && token) {
+        if (actionFromUrl === 'approve' && token && !isPoRequestApproval) {
             const endpointBase = isGeneralApproval
                 ? '/general-approvals'
                 : isUnifiedApproval
