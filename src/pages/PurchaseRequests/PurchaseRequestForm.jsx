@@ -1,8 +1,21 @@
 import React, { useState } from 'react';
-import { Send, X, AlertCircle } from 'lucide-react';
+import { Send, X, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { resolvePurchaseRequestModule } from './requestModuleConfig';
+
+const APPROVAL_DEPARTMENT_OPTIONS = [
+    { value: 'GM', label: 'General Manager' },
+    { value: 'FINANCE_CONTROL', label: 'Finance Control Department' },
+    { value: 'COMMERCIAL_MANAGER', label: 'Commercial Manager' }
+];
+
+const createEmptyItem = () => ({
+    item_name: '',
+    quantity: 1,
+    unit: '',
+    notes: ''
+});
 
 const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
     const location = useLocation();
@@ -13,15 +26,32 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
         description: '',
         quantity: 1,
         priority: 'Medium',
-        department: moduleConfig.defaultDepartment
+        department: moduleConfig.defaultDepartment,
+        approval_department: 'GM'
     });
+    const [items, setItems] = useState([createEmptyItem()]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [attachment, setAttachment] = useState(null);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleItemChange = (index, field, value) => {
+        setItems((prev) => prev.map((item, idx) => (
+            idx === index ? { ...item, [field]: value } : item
+        )));
+    };
+
+    const addItem = () => setItems((prev) => [...prev, createEmptyItem()]);
+
+    const removeItem = (index) => {
+        setItems((prev) => {
+            if (prev.length === 1) return prev;
+            return prev.filter((_, idx) => idx !== index);
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -41,6 +71,21 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
             return;
         }
 
+        const cleanedItems = items
+            .map((item) => ({
+                item_name: String(item.item_name || '').trim(),
+                quantity: Math.max(1, parseInt(item.quantity, 10) || 1),
+                unit: String(item.unit || '').trim(),
+                notes: String(item.notes || '').trim()
+            }))
+            .filter((item) => item.item_name);
+
+        if (cleanedItems.length === 0) {
+            setLoading(false);
+            setError('Please add at least one valid item.');
+            return;
+        }
+
         try {
             const payload = new FormData();
             payload.append('title', formData.title);
@@ -49,7 +94,9 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
             payload.append('quantity', String(formData.quantity));
             payload.append('priority', formData.priority);
             payload.append('department', formData.department || moduleConfig.defaultDepartment);
+            payload.append('approval_department', formData.approval_department);
             payload.append('source_section', moduleConfig.sourceSection);
+            payload.append('items', JSON.stringify(cleanedItems));
 
             if (attachment) {
                 payload.append('attachment', attachment);
@@ -67,7 +114,7 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto py-4">
+        <div className="max-w-3xl mx-auto py-4">
             <div className="flex items-center justify-between mb-8">
                 <h2 className="text-xl font-black text-slate-800 tracking-tight">Create New Request</h2>
                 <button onClick={onCancel} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400">
@@ -92,7 +139,7 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
                             value={formData.title}
                             onChange={handleChange}
                             required
-                            placeholder="e.g., 500 Sheets of MDF 18mm"
+                            placeholder="e.g., Board Consumables for Week 2"
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all"
                         />
                     </div>
@@ -128,7 +175,7 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Quantity</label>
                             <input
@@ -148,9 +195,75 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
                                 name="department"
                                 value={formData.department}
                                 onChange={handleChange}
-                                placeholder="e.g., Production"
                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all"
                             />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Approval Department</label>
+                            <select
+                                name="approval_department"
+                                value={formData.approval_department}
+                                onChange={handleChange}
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all"
+                            >
+                                {APPROVAL_DEPARTMENT_OPTIONS.map((option) => (
+                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Items</h3>
+                            <button type="button" onClick={addItem} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all">
+                                <Plus size={14} />
+                                Add Item
+                            </button>
+                        </div>
+
+                        <div className="space-y-3">
+                            {items.map((item, idx) => (
+                                <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white border border-slate-200 rounded-xl p-3">
+                                    <input
+                                        type="text"
+                                        value={item.item_name}
+                                        onChange={(e) => handleItemChange(idx, 'item_name', e.target.value)}
+                                        placeholder="Item name"
+                                        className="md:col-span-5 px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold"
+                                    />
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={item.quantity}
+                                        onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                                        placeholder="Qty"
+                                        className="md:col-span-2 px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={item.unit}
+                                        onChange={(e) => handleItemChange(idx, 'unit', e.target.value)}
+                                        placeholder="Unit"
+                                        className="md:col-span-2 px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={item.notes}
+                                        onChange={(e) => handleItemChange(idx, 'notes', e.target.value)}
+                                        placeholder="Notes"
+                                        className="md:col-span-2 px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeItem(idx)}
+                                        className="md:col-span-1 p-2 rounded-lg text-rose-500 hover:bg-rose-50"
+                                        title="Remove item"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
@@ -175,7 +288,7 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-xs file:font-black file:text-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all"
                         />
                         <p className="mt-2 text-xs text-slate-500 font-semibold">
-                            Upload one PDF document (max 10MB). It will be visible to PM, GM, and DM during approval.
+                            Upload one PDF document (max 10MB). It will be visible to the selected approval department.
                         </p>
                     </div>
                 </div>
