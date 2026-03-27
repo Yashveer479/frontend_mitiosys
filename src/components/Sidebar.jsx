@@ -35,6 +35,30 @@ const Sidebar = () => {
     ];
 
     const navItems = allNavItems.filter(item => !item.roles || item.roles.includes(role));
+    const laminationItemNames = ['Lamination Dept', 'Warehouse Inventory'];
+    const laminationNavItems = navItems.filter(item => laminationItemNames.includes(item.name));
+    const primaryNavItems = navItems.filter(item => !laminationItemNames.includes(item.name));
+
+    const renderNavItem = (item) => (
+        <NavLink
+            key={item.name}
+            to={item.path}
+            className={({ isActive }) =>
+                `flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all duration-200 group ${isActive
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                }`
+            }
+        >
+            <item.icon size={18} />
+            <span className="text-sm font-medium">{item.name}</span>
+        </NavLink>
+    );
+
+    // Group items by section
+    const productionItemNames = ['Production', 'Thickness Processing', 'Sanding Processing', 'Grading', 'Production Transfer', 'Send to Lamination'];
+    const productionNavItems = navItems.filter(item => productionItemNames.includes(item.name));
+    const otherNavItems = navItems.filter(item => !productionItemNames.includes(item.name) && !laminationItemNames.includes(item.name));
 
     return (
         <div className="fixed left-0 top-0 h-screen w-64 bg-secondary text-white flex flex-col shadow-xl z-30 overflow-hidden">
@@ -48,22 +72,43 @@ const Sidebar = () => {
                 </div>
             </div>
 
-            <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
-                {navItems.map((item) => (
-                    <NavLink
-                        key={item.name}
-                        to={item.path}
-                        className={({ isActive }) =>
-                            `flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all duration-200 group ${isActive
-                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                            }`
-                        }
-                    >
-                        <item.icon size={18} />
-                        <span className="text-sm font-medium">{item.name}</span>
-                    </NavLink>
-                ))}
+            <nav className="flex-1 px-3 py-6 overflow-y-auto">
+                <div className="space-y-1">
+                    {navItems.filter(item => item.name === 'Dashboard').map(renderNavItem)}
+                </div>
+
+                {/* Production Section */}
+                {productionNavItems.length > 0 && (
+                    <div className="mt-5 pt-4 border-t border-white/10">
+                        <p className="px-4 mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            Production
+                        </p>
+                        <div className="space-y-1">
+                            {productionNavItems.map(renderNavItem)}
+                        </div>
+                    </div>
+                )}
+
+                {/* Lamination Section - Right below Production */}
+                {laminationNavItems.length > 0 && (
+                    <div className="mt-5 pt-4 border-t border-white/10">
+                        <p className="px-4 mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            Lamination
+                        </p>
+                        <div className="space-y-1">
+                            {laminationNavItems.map(renderNavItem)}
+                        </div>
+                    </div>
+                )}
+
+                {/* Other Sections */}
+                {otherNavItems.length > 0 && (
+                    <div className="mt-5 pt-4 border-t border-white/10">
+                        <div className="space-y-1">
+                            {otherNavItems.map(renderNavItem)}
+                        </div>
+                    </div>
+                )}
             </nav>
 
             <div className="p-4 mt-auto border-t border-white/5 bg-mitio-navy-dark/20 space-y-2">
