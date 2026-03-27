@@ -62,6 +62,7 @@ const PurchaseOrders = () => {
     const [poRequestForm, setPoRequestForm] = useState(emptyPoRequestForm);
     const [formErrors, setFormErrors] = useState({});
     const [saving, setSaving] = useState(false);
+    const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
     useEffect(() => {
         const load = async () => {
@@ -206,6 +207,37 @@ const PurchaseOrders = () => {
         }
     };
 
+    const handleOrderStatusUpdate = async (orderId, nextStatus) => {
+        try {
+            setUpdatingOrderId(orderId);
+            await api.patch(`/purchase-orders/${orderId}/status`, { status: nextStatus });
+            await fetchOrders();
+        } catch (err) {
+            console.error('Failed to update purchase order status', err);
+            alert(err?.response?.data?.msg || 'Failed to update purchase order status');
+        } finally {
+            setUpdatingOrderId(null);
+        }
+    };
+
+    const buildPorSourceContext = (entry) => {
+        const sourceHistory = Array.isArray(entry?.source_approval_history)
+            ? entry.source_approval_history
+            : [];
+
+        return {
+            title: entry?.title || 'Purchase Order Request',
+            description: entry?.description || '',
+            source_request_module: entry?.source_request_module || '',
+            source_request_id: entry?.source_request_id || '',
+            source_department: entry?.source_department || '',
+            source_section: entry?.source_section || '',
+            source_requester_name: entry?.source_requester_name || '',
+            source_approved_by_name: entry?.source_approved_by_name || '',
+            source_approval_history: JSON.stringify(sourceHistory)
+        };
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -226,13 +258,6 @@ const PurchaseOrders = () => {
                             <span className="text-blue-600">Purchase Orders</span>
                         </nav>
                     </div>
-                    <button
-                        onClick={handleOpenModal}
-                        className="flex items-center space-x-2 bg-blue-600 px-6 py-2.5 rounded-xl text-xs font-black text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-                    >
-                        <Plus size={16} strokeWidth={3} />
-                        <span>New Purchase Order Request</span>
-                    </button>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -298,14 +323,24 @@ const PurchaseOrders = () => {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <button
-                                                    onClick={() => navigate(`/inventory/purchase-orders/requests/${entry.id}`)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-wider text-blue-700 hover:bg-blue-100 transition-all"
-                                                    title="Open POR details"
-                                                >
-                                                    <Eye size={13} />
-                                                    <span>Open POR Page</span>
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => navigate(`/inventory/purchase-orders/requests/${entry.id}`)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-wider text-blue-700 hover:bg-blue-100 transition-all"
+                                                        title="Open POR details"
+                                                    >
+                                                        <Eye size={13} />
+                                                        <span>Open POR Page</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleOpenModal(buildPorSourceContext(entry))}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-[10px] font-black uppercase tracking-wider text-emerald-700 hover:bg-emerald-100 transition-all"
+                                                        title="Create new PO request from this POR"
+                                                    >
+                                                        <Plus size={13} />
+                                                        <span>New Purchase Order Request</span>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     </React.Fragment>
@@ -370,14 +405,45 @@ const PurchaseOrders = () => {
                                             <td className="px-6 py-5 text-[11px] font-bold text-slate-500">
                                                 {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                                             </td>
-                                            <td className="px-6 py-5 text-right">
-                                                <button
-                                                    onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
-                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                    title="View items"
-                                                >
-                                                    {expandedOrderId === order.id ? <ChevronUp size={16} /> : <Eye size={16} />}
-                                                </button>
+                                            <td className="px-6 py-5">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {order.status === 'pending' && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleOrderStatusUpdate(order.id, 'approved')}
+                                                                disabled={updatingOrderId === order.id}
+                                                                className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black uppercase tracking-wider hover:bg-emerald-100 disabled:opacity-60"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleOrderStatusUpdate(order.id, 'cancelled')}
+                                                                disabled={updatingOrderId === order.id}
+                                                                className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-black uppercase tracking-wider hover:bg-rose-100 disabled:opacity-60"
+                                                            >
+                                                                Reject
+                                                            </button>
+                                                        </>
+                                                    )}
+
+                                                    {order.status === 'approved' && (
+                                                        <button
+                                                            onClick={() => handleOrderStatusUpdate(order.id, 'received')}
+                                                            disabled={updatingOrderId === order.id}
+                                                            className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-black uppercase tracking-wider hover:bg-blue-100 disabled:opacity-60"
+                                                        >
+                                                            Received
+                                                        </button>
+                                                    )}
+
+                                                    <button
+                                                        onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
+                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                        title="View items"
+                                                    >
+                                                        {expandedOrderId === order.id ? <ChevronUp size={16} /> : <Eye size={16} />}
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                         {expandedOrderId === order.id && (
