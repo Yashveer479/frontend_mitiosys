@@ -6,7 +6,7 @@ import { resolvePurchaseRequestModule } from './requestModuleConfig';
 
 const APPROVAL_DEPARTMENT_OPTIONS = [
     { value: 'GM', label: 'General Manager' },
-    { value: 'FINANCE_CONTROL', label: 'Finance Control Department' },
+    { value: 'FINANCE_MANAGER', label: 'Finance Manager' },
     { value: 'COMMERCIAL_MANAGER', label: 'Commercial Manager' }
 ];
 

@@ -7,7 +7,8 @@ import { resolvePurchaseRequestModule } from './requestModuleConfig';
 
 const APPROVAL_LABELS = {
     GM: 'General Manager',
-    FINANCE_CONTROL: 'Finance Control Department',
+    FINANCE_CONTROL: 'Finance Manager',
+    FINANCE_MANAGER: 'Finance Manager',
     COMMERCIAL_MANAGER: 'Commercial Manager'
 };
 
