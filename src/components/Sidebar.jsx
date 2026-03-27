@@ -21,7 +21,7 @@ const groups = [
         label: 'Production',
         icon: Factory,
         color: 'text-violet-400',
-        paths: ['/production', '/warehouse/transfer', '/warehouse/lamination', '/lamination', '/warehouse/inventory'],
+        paths: ['/production', '/warehouse/transfer', '/warehouse/lamination'],
         items: [
             { name: 'Planning', path: '/production/planning', icon: CalendarDays },
             { name: 'Raw Entry', path: '/production/raw-entry', icon: Boxes },
@@ -30,6 +30,15 @@ const groups = [
             { name: 'Grading', path: '/production/grading', icon: FlaskConical },
             { name: 'Production Transfer', path: '/warehouse/transfer', icon: ArrowRightLeft },
             { name: 'Send to Lamination', path: '/warehouse/lamination', icon: Layers },
+        ]
+    },
+    {
+        id: 'lamination',
+        label: 'Lamination',
+        icon: Layers,
+        color: 'text-violet-400',
+        paths: ['/lamination', '/warehouse/inventory'],
+        items: [
             { name: 'Lamination Dept', path: '/lamination/process', icon: Layers },
             { name: 'Warehouse Inventory', path: '/warehouse/inventory', icon: Warehouse },
         ]
