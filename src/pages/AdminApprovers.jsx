@@ -10,6 +10,7 @@ const resolveRoleBasis = (user) => {
     if (level === 'L4') return 'Level 4 - Director';
     if (level === 'L5') return 'Level 5 - CEO';
     if (level === 'GM') return 'General Manager (No Level)';
+    if (level === 'CM') return 'Commercial Manager (No Level)';
 
     const role = String(user?.role || '').toLowerCase();
     if (!role) return 'Not Defined';

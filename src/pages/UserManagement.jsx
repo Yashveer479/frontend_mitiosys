@@ -50,6 +50,7 @@ const UserManagement = () => {
         if (value === 'PM' || value === 'L1') return 'Level 1 - Procurement Manager';
         if (value === 'DM' || value === 'L2') return 'Level 2 - Department Manager';
         if (value === 'L3') return 'Level 3 - Finance Manager';
+        if (value === 'CM') return 'Commercial Manager (No Level)';
         if (value === 'L4') return 'Level 4 - Director';
         if (value === 'L5') return 'Level 5 - CEO';
         if (value === 'GM') return 'General Manager (No Level)';
@@ -279,6 +280,7 @@ const UserManagement = () => {
                                             <td className="py-4 px-6">
                                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide ${user.approval_level === 'PM' ? 'bg-indigo-100 text-indigo-700' :
                                                     user.approval_level === 'GM' ? 'bg-amber-100 text-amber-700' :
+                                                        user.approval_level === 'CM' ? 'bg-teal-100 text-teal-700' :
                                                         user.approval_level === 'DM' ? 'bg-rose-100 text-rose-700' :
                                                             user.approval_level === 'L1' ? 'bg-cyan-100 text-cyan-700' :
                                                                 user.approval_level === 'L2' ? 'bg-violet-100 text-violet-700' :
@@ -454,6 +456,7 @@ const UserManagement = () => {
                                         <option value="L4">Level 4 - Director</option>
                                         <option value="L5">Level 5 - CEO</option>
                                         <option value="GM">General Manager (No Level)</option>
+                                        <option value="CM">Commercial Manager (No Level)</option>
                                     </select>
                                 </div>
                             </div>
