@@ -12,7 +12,6 @@ import {
     XCircle
 } from 'lucide-react';
 import api from '../services/api';
-import { toServerUrl } from '../services/urlConfig';
 
 const STATUS_STYLES = {
     pending: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -258,35 +257,6 @@ const PurchaseOrderRequestDetails = () => {
                             <InfoRow icon={Building2} label="Section" value={request.source_section || request.source_request_module || 'N/A'} />
                             <InfoRow icon={User} label="Approved By" value={request.source_approved_by_name || 'N/A'} />
                         </div>
-                    </section>
-
-                    <section className="bg-white rounded-2xl border border-slate-200 p-5">
-                        <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4">Supplier Options</h3>
-                        {!Array.isArray(request.supplierOptions) || request.supplierOptions.length === 0 ? (
-                            <p className="text-xs font-semibold text-slate-500">No suppliers linked.</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {request.supplierOptions.map((row) => {
-                                    const quoteUrl = row.quote_pdf_path ? toServerUrl(row.quote_pdf_path) : null;
-                                    return (
-                                        <div key={row.id} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
-                                            <p className="text-sm font-black text-slate-800">{row.supplier?.name || row.supplier_name || 'Supplier'}</p>
-                                            {row.notes && <p className="text-xs font-semibold text-slate-600 mt-1">{row.notes}</p>}
-                                            {quoteUrl && (
-                                                <a
-                                                    href={quoteUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="inline-flex mt-2 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700"
-                                                >
-                                                    Open Quote PDF
-                                                </a>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
                     </section>
 
                     <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
