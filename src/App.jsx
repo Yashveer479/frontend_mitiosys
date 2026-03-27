@@ -37,6 +37,7 @@ import LaminationDepartment from './pages/LaminationDepartment';
 import WarehouseInventory from './pages/WarehouseInventory';
 import Suppliers from './pages/Suppliers';
 import PurchaseOrders from './pages/PurchaseOrders';
+import PurchaseOrderRequestDetails from './pages/PurchaseOrderRequestDetails';
 import GoodsReceipt from './pages/GoodsReceipt';
 import InventoryHistory from './pages/InventoryHistory';
 import StockAdjustment from './pages/StockAdjustment';
@@ -139,6 +140,7 @@ function App() {
                                 <Route path="/warehouse/inventory" element={<WarehouseInventory />} />
                                 <Route path="/inventory/suppliers" element={<Suppliers />} />
                                 <Route path="/inventory/purchase-orders" element={<PurchaseOrders />} />
+                                <Route path="/inventory/purchase-orders/requests/:id" element={<PurchaseOrderRequestDetails />} />
                                 <Route path="/inventory/goods-receipt" element={<GoodsReceipt />} />
                                 <Route path="/inventory/history" element={<InventoryHistory />} />
                                 <Route path="/inventory/adjustment" element={<StockAdjustment />} />

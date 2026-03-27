@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
     ShoppingBag,
@@ -47,6 +48,8 @@ const emptyPoRequestForm = {
 };
 
 const PurchaseOrders = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [orders, setOrders] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
     const [poRequests, setPoRequests] = useState([]);
@@ -54,7 +57,6 @@ const PurchaseOrders = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [requestSearch, setRequestSearch] = useState('');
     const [expandedOrderId, setExpandedOrderId] = useState(null);
-    const [expandedRequestId, setExpandedRequestId] = useState(null);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [poRequestForm, setPoRequestForm] = useState(emptyPoRequestForm);
@@ -71,6 +73,19 @@ const PurchaseOrders = () => {
         };
         load();
     }, []);
+
+    useEffect(() => {
+        const state = location.state || {};
+        if (state.openPoRequestModal) {
+            setPoRequestForm({
+                ...emptyPoRequestForm,
+                ...(state.sourceRequestContext || {})
+            });
+            setFormErrors({});
+            setIsModalOpen(true);
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, location.pathname, navigate]);
 
     const fetchOrders = async () => {
         try {
@@ -127,8 +142,11 @@ const PurchaseOrders = () => {
         });
     }, [poRequests, requestSearch]);
 
-    const handleOpenModal = () => {
-        setPoRequestForm(emptyPoRequestForm);
+    const handleOpenModal = (prefill = null) => {
+        setPoRequestForm({
+            ...emptyPoRequestForm,
+            ...(prefill || {})
+        });
         setFormErrors({});
         setIsModalOpen(true);
     };
@@ -281,38 +299,14 @@ const PurchaseOrders = () => {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <button
-                                                    onClick={() => setExpandedRequestId(expandedRequestId === entry.id ? null : entry.id)}
+                                                    onClick={() => navigate(`/inventory/purchase-orders/requests/${entry.id}`)}
                                                     className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                    title="View approval history"
+                                                    title="Open POR details"
                                                 >
-                                                    {expandedRequestId === entry.id ? <ChevronUp size={16} /> : <Eye size={16} />}
+                                                    <Eye size={16} />
                                                 </button>
                                             </td>
                                         </tr>
-                                        {expandedRequestId === entry.id && (
-                                            <tr>
-                                                <td colSpan={6} className="px-4 pb-4 pt-0 bg-slate-50/60">
-                                                    <div className="border border-slate-200 rounded-xl bg-white p-4 mt-1">
-                                                        <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3">Approval History</h4>
-                                                        {Array.isArray(entry.source_approval_history) && entry.source_approval_history.length > 0 ? (
-                                                            <div className="space-y-2">
-                                                                {entry.source_approval_history.map((log, idx) => (
-                                                                    <div key={log.id || idx} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs">
-                                                                        <div className="font-black text-slate-800 uppercase">{log.action || 'action'}</div>
-                                                                        <div className="text-slate-600 mt-1">
-                                                                            {log.approverName || 'N/A'}{log.role ? ` (${log.role})` : ''}
-                                                                        </div>
-                                                                        {log.comment && <div className="text-slate-500 mt-1">{log.comment}</div>}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <p className="text-xs font-semibold text-slate-500">No history available</p>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )}
                                     </React.Fragment>
                                 ))}
                             </tbody>
