@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Check, X, History, Layers, Calendar, User, Send, Package } from 'lucide-react';
+import { ArrowLeft, Check, X, History, Layers, Calendar, User, Package } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { toServerUrl } from '../../services/urlConfig';
@@ -80,10 +80,8 @@ const PurchaseRequestDetails = ({ requestId, onBack }) => {
                             <div className="space-y-3">
                                 {request.items.map((item) => (
                                     <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 border border-slate-100 rounded-xl p-3 bg-slate-50">
-                                        <div className="md:col-span-5 text-sm font-bold text-slate-800">{item.item_name}</div>
-                                        <div className="md:col-span-2 text-sm font-semibold text-slate-600">Qty: {item.quantity}</div>
-                                        <div className="md:col-span-2 text-sm font-semibold text-slate-600">{item.unit || '-'}</div>
-                                        <div className="md:col-span-3 text-sm font-medium text-slate-500">{item.notes || '-'}</div>
+                                        <div className="md:col-span-9 text-sm font-bold text-slate-800">{item.item_name}</div>
+                                        <div className="md:col-span-3 text-sm font-semibold text-slate-600">Qty: {item.quantity}</div>
                                     </div>
                                 ))}
                             </div>
@@ -160,7 +158,6 @@ const PurchaseRequestDetails = ({ requestId, onBack }) => {
                             <InfoItem label="Requested By" value={request.requester?.name || 'N/A'} icon={User} />
                             <InfoItem label="Department" value={request.department || 'N/A'} icon={Layers} />
                             <InfoItem label="Section" value={String(request.source_section || moduleConfig.sourceSection || 'N/A').toUpperCase()} icon={Layers} />
-                            <InfoItem label="Total Quantity" value={request.quantity} icon={Send} />
                             <InfoItem label="Created Date" value={new Date(request.createdAt || request.created_at).toLocaleString()} icon={Calendar} />
                         </div>
                     </div>

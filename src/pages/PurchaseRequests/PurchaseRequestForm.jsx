@@ -12,9 +12,7 @@ const APPROVAL_DEPARTMENT_OPTIONS = [
 
 const createEmptyItem = () => ({
     item_name: '',
-    quantity: 1,
-    unit: '',
-    notes: ''
+    quantity: 1
 });
 
 const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
@@ -24,7 +22,6 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
         title: '',
         request_type: 'Raw Material',
         description: '',
-        quantity: 1,
         priority: 'Medium',
         department: moduleConfig.defaultDepartment,
         approval_department: 'GM'
@@ -74,9 +71,7 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
         const cleanedItems = items
             .map((item) => ({
                 item_name: String(item.item_name || '').trim(),
-                quantity: Math.max(1, parseInt(item.quantity, 10) || 1),
-                unit: String(item.unit || '').trim(),
-                notes: String(item.notes || '').trim()
+                quantity: Math.max(1, parseInt(item.quantity, 10) || 1)
             }))
             .filter((item) => item.item_name);
 
@@ -91,7 +86,6 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
             payload.append('title', formData.title);
             payload.append('request_type', formData.request_type);
             payload.append('description', formData.description);
-            payload.append('quantity', String(formData.quantity));
             payload.append('priority', formData.priority);
             payload.append('department', formData.department || moduleConfig.defaultDepartment);
             payload.append('approval_department', formData.approval_department);
@@ -175,19 +169,7 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Quantity</label>
-                            <input
-                                type="number"
-                                name="quantity"
-                                value={formData.quantity}
-                                onChange={handleChange}
-                                required
-                                min="1"
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all"
-                            />
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Department</label>
                             <input
@@ -238,21 +220,7 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
                                         value={item.quantity}
                                         onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
                                         placeholder="Qty"
-                                        className="md:col-span-2 px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold"
-                                    />
-                                    <input
-                                        type="text"
-                                        value={item.unit}
-                                        onChange={(e) => handleItemChange(idx, 'unit', e.target.value)}
-                                        placeholder="Unit"
-                                        className="md:col-span-2 px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold"
-                                    />
-                                    <input
-                                        type="text"
-                                        value={item.notes}
-                                        onChange={(e) => handleItemChange(idx, 'notes', e.target.value)}
-                                        placeholder="Notes"
-                                        className="md:col-span-2 px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold"
+                                        className="md:col-span-3 px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold"
                                     />
                                     <button
                                         type="button"

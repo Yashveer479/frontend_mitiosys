@@ -47,7 +47,7 @@ const PurchaseRequestList = ({ requests, loading, onViewDetails, onDeleteRequest
                             <td className="px-6 py-4">
                                 <div>
                                     <p className="text-sm font-bold text-slate-800">{request.title}</p>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">{request.request_type} • Qty: {request.quantity}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">{request.request_type}</p>
                                 </div>
                             </td>
                             <td className="px-6 py-4">
