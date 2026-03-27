@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     ArrowLeft,
@@ -7,7 +7,6 @@ import {
     CheckCircle2,
     FileText,
     History,
-    Plus,
     User,
     XCircle
 } from 'lucide-react';
@@ -117,34 +116,6 @@ const PurchaseOrderRequestDetails = () => {
         load();
     }, [id]);
 
-    const sourceContext = useMemo(() => {
-        if (!request) return null;
-        const sourceHistory = Array.isArray(request.source_approval_history)
-            ? request.source_approval_history
-            : [];
-
-        return {
-            title: request.title || 'Purchase Order Request',
-            description: request.description || '',
-            source_request_module: request.source_request_module || '',
-            source_request_id: request.source_request_id || '',
-            source_department: request.source_department || '',
-            source_section: request.source_section || '',
-            source_requester_name: request.source_requester_name || '',
-            source_approved_by_name: request.source_approved_by_name || '',
-            source_approval_history: JSON.stringify(sourceHistory)
-        };
-    }, [request]);
-
-    const openNewPoRequest = () => {
-        navigate('/inventory/purchase-orders', {
-            state: {
-                openPoRequestModal: true,
-                sourceRequestContext: sourceContext
-            }
-        });
-    };
-
     if (loading) {
         return (
             <div className="min-h-[50vh] flex items-center justify-center">
@@ -238,17 +209,6 @@ const PurchaseOrderRequestDetails = () => {
                         )}
                     </section>
 
-                    <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
-                        <p className="text-xs font-black text-blue-600 uppercase tracking-widest mb-3">Next Action</p>
-                        <button
-                            type="button"
-                            onClick={openNewPoRequest}
-                            className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-all"
-                        >
-                            <Plus size={14} />
-                            <span>New Purchase Order Request</span>
-                        </button>
-                    </div>
                 </div>
 
                 <div className="space-y-6">

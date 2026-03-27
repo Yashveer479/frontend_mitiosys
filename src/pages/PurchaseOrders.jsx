@@ -220,24 +220,6 @@ const PurchaseOrders = () => {
         }
     };
 
-    const buildPorSourceContext = (entry) => {
-        const sourceHistory = Array.isArray(entry?.source_approval_history)
-            ? entry.source_approval_history
-            : [];
-
-        return {
-            title: entry?.title || 'Purchase Order Request',
-            description: entry?.description || '',
-            source_request_module: entry?.source_request_module || '',
-            source_request_id: entry?.source_request_id || '',
-            source_department: entry?.source_department || '',
-            source_section: entry?.source_section || '',
-            source_requester_name: entry?.source_requester_name || '',
-            source_approved_by_name: entry?.source_approved_by_name || '',
-            source_approval_history: JSON.stringify(sourceHistory)
-        };
-    };
-
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -323,24 +305,14 @@ const PurchaseOrders = () => {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => navigate(`/inventory/purchase-orders/requests/${entry.id}`)}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-wider text-blue-700 hover:bg-blue-100 transition-all"
-                                                        title="Open POR details"
-                                                    >
-                                                        <Eye size={13} />
-                                                        <span>Open POR Page</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleOpenModal(buildPorSourceContext(entry))}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-[10px] font-black uppercase tracking-wider text-emerald-700 hover:bg-emerald-100 transition-all"
-                                                        title="Create new PO request from this POR"
-                                                    >
-                                                        <Plus size={13} />
-                                                        <span>New Purchase Order Request</span>
-                                                    </button>
-                                                </div>
+                                                <button
+                                                    onClick={() => navigate(`/inventory/purchase-orders/requests/${entry.id}`)}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-wider text-blue-700 hover:bg-blue-100 transition-all"
+                                                    title="Show POR history"
+                                                >
+                                                    <Eye size={13} />
+                                                    <span>Show History</span>
+                                                </button>
                                             </td>
                                         </tr>
                                     </React.Fragment>
