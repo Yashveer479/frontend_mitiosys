@@ -19,6 +19,7 @@ const ApprovalAction = () => {
     const isUnifiedApproval = moduleType === 'unified';
     const isProductionPurchaseApproval = moduleType === 'production-pr';
     const isLaminationPurchaseApproval = moduleType === 'lamination-pr';
+    const isPoRequestApproval = moduleType === 'po-request';
     const actionFromUrl = useMemo(() => {
         const value = String(searchParams.get('action') || '').trim().toLowerCase();
         return ['approve', 'reject'].includes(value) ? value : '';
@@ -31,6 +32,7 @@ const ApprovalAction = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [preview, setPreview] = useState(null);
+    const [selectedSupplierOptionId, setSelectedSupplierOptionId] = useState('');
 
     const loadPreview = useCallback(async () => {
         if (!token) {
@@ -49,7 +51,9 @@ const ApprovalAction = () => {
                         ? '/production-requests'
                         : isLaminationPurchaseApproval
                             ? '/lamination-requests'
-                            : '/requests';
+                            : isPoRequestApproval
+                                ? '/purchase-orders/requests'
+                                : '/requests';
             const response = await axios.get(`${API_BASE_URL}${endpointBase}/public/preview`, {
                 params: { token }
             });
@@ -60,7 +64,7 @@ const ApprovalAction = () => {
         } finally {
             setLoading(false);
         }
-    }, [token, isGeneralApproval, isUnifiedApproval, isProductionPurchaseApproval, isLaminationPurchaseApproval]);
+    }, [token, isGeneralApproval, isUnifiedApproval, isProductionPurchaseApproval, isLaminationPurchaseApproval, isPoRequestApproval]);
 
     const submitAction = useCallback(async (action, { force = false } = {}) => {
         if (!token) return;
@@ -78,6 +82,14 @@ const ApprovalAction = () => {
             return;
         }
 
+        if (isPoRequestApproval && action === 'approve') {
+            const hasSuppliers = Array.isArray(preview?.request?.supplierOptions) && preview.request.supplierOptions.length > 0;
+            if (hasSuppliers && !String(selectedSupplierOptionId || '').trim()) {
+                setError('Please select one supplier quotation before approval.');
+                return;
+            }
+        }
+
         try {
             setSubmitting(true);
             setError('');
@@ -91,11 +103,14 @@ const ApprovalAction = () => {
                         ? '/production-requests'
                         : isLaminationPurchaseApproval
                             ? '/lamination-requests'
-                            : '/requests';
+                            : isPoRequestApproval
+                                ? '/purchase-orders/requests'
+                                : '/requests';
             const response = await axios.post(`${API_BASE_URL}${endpointBase}/public/act`, {
                 token,
                 action,
-                comment: comment.trim() || null
+                comment: comment.trim() || null,
+                supplierOptionId: isPoRequestApproval ? (selectedSupplierOptionId || null) : null
             });
 
             setPreview((prev) => ({
@@ -110,9 +125,9 @@ const ApprovalAction = () => {
         } finally {
             setSubmitting(false);
         }
-    }, [comment, token, isGeneralApproval, isUnifiedApproval, isProductionPurchaseApproval, isLaminationPurchaseApproval]);
+    }, [comment, token, isGeneralApproval, isUnifiedApproval, isProductionPurchaseApproval, isLaminationPurchaseApproval, isPoRequestApproval, preview, selectedSupplierOptionId]);
 
-    const attachmentUrl = token
+    const attachmentUrl = token && !isPoRequestApproval
         ? `${API_BASE_URL}${isGeneralApproval
             ? '/general-approvals'
             : isUnifiedApproval
@@ -134,7 +149,9 @@ const ApprovalAction = () => {
                         ? '/production-requests'
                         : isLaminationPurchaseApproval
                             ? '/lamination-requests'
-                            : '/requests';
+                            : isPoRequestApproval
+                                ? '/purchase-orders/requests'
+                                : '/requests';
             const quickActionValue = isUnifiedApproval ? 'APPROVED' : 'approve';
             const quickActionUrl = `${API_BASE_URL}${endpointBase}/public/quick-action?token=${encodeURIComponent(token)}&action=${quickActionValue}`;
             window.location.replace(quickActionUrl);
@@ -147,7 +164,7 @@ const ApprovalAction = () => {
         }
 
         loadPreview();
-    }, [actionFromUrl, token, isGeneralApproval, isUnifiedApproval, isProductionPurchaseApproval, isLaminationPurchaseApproval, openMode, attachmentUrl, loadPreview]);
+    }, [actionFromUrl, token, isGeneralApproval, isUnifiedApproval, isProductionPurchaseApproval, isLaminationPurchaseApproval, isPoRequestApproval, openMode, attachmentUrl, loadPreview]);
 
     useEffect(() => {
         if (!preview || !actionFromUrl || autoActionDone) {
@@ -159,9 +176,13 @@ const ApprovalAction = () => {
             return;
         }
 
+        if (isPoRequestApproval) {
+            return;
+        }
+
         setAutoActionDone(true);
         submitAction(actionFromUrl, { force: true });
-    }, [actionFromUrl, autoActionDone, preview, submitAction]);
+    }, [actionFromUrl, autoActionDone, preview, submitAction, isPoRequestApproval]);
 
     if (loading) {
         return <div className="min-h-screen grid place-items-center text-slate-600 font-semibold">Loading approval request...</div>;
@@ -178,7 +199,7 @@ const ApprovalAction = () => {
         <div className="min-h-screen bg-slate-100 px-4 py-8">
             <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
                 <div className="px-6 py-5 border-b border-slate-200 bg-slate-50">
-                    <h1 className="text-2xl font-bold text-slate-800">{isGeneralApproval ? 'General Approval' : isUnifiedApproval ? 'Unified Request Approval' : 'Purchase Request Approval'}</h1>
+                    <h1 className="text-2xl font-bold text-slate-800">{isGeneralApproval ? 'General Approval' : isUnifiedApproval ? 'Unified Request Approval' : isPoRequestApproval ? 'Purchase Order Request Approval' : 'Purchase Request Approval'}</h1>
                     <p className="text-sm text-slate-600 mt-1">Secure mail-link workflow. No login is required for this action.</p>
                 </div>
 
@@ -192,13 +213,49 @@ const ApprovalAction = () => {
                                 <div><span className="font-semibold text-slate-700">Request ID:</span> {isGeneralApproval ? `GA-${request.id}` : isUnifiedApproval ? `REQ-${request.id}` : `PR-${request.id}`}</div>
                                 <div><span className="font-semibold text-slate-700">Status:</span> {prettyStatus(request.status)}</div>
                                 <div><span className="font-semibold text-slate-700">Title:</span> {request.title}</div>
-                                {!isGeneralApproval && !isUnifiedApproval && <div><span className="font-semibold text-slate-700">Type:</span> {request.request_type}</div>}
-                                {!isGeneralApproval && !isUnifiedApproval && <div><span className="font-semibold text-slate-700">Quantity:</span> {request.quantity}</div>}
-                                {!isGeneralApproval && !isUnifiedApproval && <div><span className="font-semibold text-slate-700">Priority:</span> {request.priority || 'Medium'}</div>}
+                                {!isGeneralApproval && !isUnifiedApproval && !isPoRequestApproval && <div><span className="font-semibold text-slate-700">Type:</span> {request.request_type}</div>}
+                                {!isGeneralApproval && !isUnifiedApproval && !isPoRequestApproval && <div><span className="font-semibold text-slate-700">Quantity:</span> {request.quantity}</div>}
+                                {!isGeneralApproval && !isUnifiedApproval && !isPoRequestApproval && <div><span className="font-semibold text-slate-700">Priority:</span> {request.priority || 'Medium'}</div>}
                                 {isUnifiedApproval && <div><span className="font-semibold text-slate-700">Type:</span> {request.type}</div>}
                                 {isUnifiedApproval && <div><span className="font-semibold text-slate-700">Amount:</span> {Number(request.invoice_amount).toLocaleString()}</div>}
                                 {isGeneralApproval && <div><span className="font-semibold text-slate-700">Flow:</span> {request.first_level} {'->'} {request.second_level} {'->'} {request.third_level}</div>}
+                                {isPoRequestApproval && <div><span className="font-semibold text-slate-700">Department Route:</span> {request.target_approval_department}</div>}
+                                {isPoRequestApproval && <div><span className="font-semibold text-slate-700">Description:</span> {request.description || 'N/A'}</div>}
                             </div>
+
+                            {isPoRequestApproval && actionFromUrl === 'approve' && Array.isArray(request.supplierOptions) && request.supplierOptions.length > 0 && (
+                                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                                    <p className="text-sm font-semibold text-slate-700 mb-2">Select Supplier Quotation (single choice)</p>
+                                    <div className="space-y-2">
+                                        {request.supplierOptions.map((row) => (
+                                            <label key={row.id} className="flex items-start gap-2 rounded-md border border-slate-200 bg-white p-3 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="po_supplier_option"
+                                                    value={row.id}
+                                                    checked={String(selectedSupplierOptionId) === String(row.id)}
+                                                    onChange={(e) => setSelectedSupplierOptionId(e.target.value)}
+                                                    className="mt-1"
+                                                />
+                                                <span className="text-sm text-slate-700">
+                                                    <span className="font-semibold">{row.supplierName || 'Supplier'}</span>
+                                                    {row.notes && <span className="block text-xs text-slate-500 mt-1">Notes: {row.notes}</span>}
+                                                    {row.quotePdfUrl && (
+                                                        <a
+                                                            href={row.quotePdfUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="block text-xs text-blue-700 underline mt-1"
+                                                        >
+                                                            {row.quotePdfName || 'Open quotation PDF'}
+                                                        </a>
+                                                    )}
+                                                </span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {request.attachment && (
                                 <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
