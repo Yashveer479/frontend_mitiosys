@@ -3,12 +3,16 @@ import {
     ArrowLeft, Check, X, AlertCircle, Clock, 
     User, Send, MessageSquare, History, CheckCircle2, Layers, Calendar
 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { toServerUrl } from '../../services/urlConfig';
+import { resolvePurchaseRequestModule } from './requestModuleConfig';
 
 const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
     const { user } = useAuth();
+    const location = useLocation();
+    const moduleConfig = resolvePurchaseRequestModule(location.pathname);
     const [request, setRequest] = useState(null);
     const [loading, setLoading] = useState(true);
     const [comment, setComment] = useState('');
@@ -17,7 +21,7 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
     const fetchDetails = async () => {
         try {
             setLoading(true);
-            const res = await api.get(`/requests/${requestId}`);
+            const res = await api.get(`${moduleConfig.apiBase}/${requestId}`);
             setRequest(res.data);
         } catch (err) {
             console.error('Error fetching PR details:', err);
@@ -28,7 +32,7 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
 
     useEffect(() => {
         fetchDetails();
-    }, [requestId]);
+    }, [requestId, moduleConfig.apiBase]);
 
     const handleAction = async (action) => {
         if (!comment.trim() && action === 'comment') {
@@ -38,7 +42,7 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
 
         setActionLoading(true);
         try {
-            const res = await api.post(`/requests/${requestId}/${action}`, { comment });
+            const res = await api.post(`${moduleConfig.apiBase}/${requestId}/${action}`, { comment });
             const updatedRequest = res?.data;
             setComment('');
 
@@ -195,6 +199,7 @@ const PurchaseRequestDetails = ({ requestId, onBack, onUpdate }) => {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                         <InfoItem label="Requested By" value={request.requester?.name} icon={User} />
                         <InfoItem label="Department" value={request.department || 'N/A'} icon={Layers} />
+                        <InfoItem label="Section" value={String(request.source_section || moduleConfig.sourceSection || 'N/A').toUpperCase()} icon={Layers} />
                         <InfoItem label="Quantity" value={request.quantity} icon={Send} />
                         <InfoItem label="Created Date" value={new Date(request.createdAt || request.created_at).toLocaleString()} icon={Calendar} />
                     </div>

@@ -9,6 +9,7 @@ import PurchaseRequestForm from './PurchaseRequestForm';
 import PurchaseRequestList from './PurchaseRequestList';
 import PurchaseRequestDetails from './PurchaseRequestDetails';
 import { useAuth } from '../../context/AuthContext';
+import { resolvePurchaseRequestModule } from './requestModuleConfig';
 
 const PurchaseRequestSystem = () => {
     const { user, loading: authLoading, logout } = useAuth();
@@ -31,6 +32,7 @@ const PurchaseRequestSystem = () => {
     const query = new URLSearchParams(location.search);
     const forceLogin = query.get('forceLogin') === '1';
     const approverEmail = String(query.get('approverEmail') || '').trim().toLowerCase();
+    const moduleConfig = useMemo(() => resolvePurchaseRequestModule(location.pathname), [location.pathname]);
     const purchaseRequestBasePath = useMemo(() => {
         if (location.pathname.startsWith('/production/purchase-requests')) return '/production/purchase-requests';
         if (location.pathname.startsWith('/lamination/purchase-requests')) return '/lamination/purchase-requests';
@@ -68,7 +70,7 @@ const PurchaseRequestSystem = () => {
     const fetchRequests = async () => {
         try {
             setLoading(true);
-            const res = await api.get('/requests');
+            const res = await api.get(moduleConfig.apiBase);
             const data = Array.isArray(res.data) ? res.data : [];
             setRequests(data);
 
@@ -87,7 +89,7 @@ const PurchaseRequestSystem = () => {
 
     const fetchSingleRequest = async (id) => {
         try {
-            const res = await api.get(`/requests/${id}`);
+            const res = await api.get(`${moduleConfig.apiBase}/${id}`);
             // Manually add or update the request in the main list
             setRequests(prev => {
                 const existing = prev.find(r => r.id === res.data.id);
@@ -108,7 +110,7 @@ const PurchaseRequestSystem = () => {
     useEffect(() => {
         // Fetch all requests initially
         fetchRequests();
-    }, []);
+    }, [moduleConfig.apiBase]);
 
     useEffect(() => {
         if (routeRequestId) {
@@ -167,7 +169,7 @@ const PurchaseRequestSystem = () => {
         if (!confirmed) return;
 
         try {
-            await api.delete(`/requests/${request.id}`);
+            await api.delete(`${moduleConfig.apiBase}/${request.id}`);
             if (selectedRequestId && Number(selectedRequestId) === Number(request.id)) {
                 navigate(toRequestPath(''));
             }

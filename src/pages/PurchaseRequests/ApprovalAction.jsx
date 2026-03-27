@@ -17,6 +17,8 @@ const ApprovalAction = () => {
     const moduleType = useMemo(() => String(searchParams.get('module') || '').trim().toLowerCase(), [searchParams]);
     const isGeneralApproval = moduleType === 'general';
     const isUnifiedApproval = moduleType === 'unified';
+    const isProductionPurchaseApproval = moduleType === 'production-pr';
+    const isLaminationPurchaseApproval = moduleType === 'lamination-pr';
     const actionFromUrl = useMemo(() => {
         const value = String(searchParams.get('action') || '').trim().toLowerCase();
         return ['approve', 'reject'].includes(value) ? value : '';
@@ -39,7 +41,15 @@ const ApprovalAction = () => {
 
         try {
             setLoading(true);
-            const endpointBase = isGeneralApproval ? '/general-approvals' : isUnifiedApproval ? '/unified-requests' : '/requests';
+            const endpointBase = isGeneralApproval
+                ? '/general-approvals'
+                : isUnifiedApproval
+                    ? '/unified-requests'
+                    : isProductionPurchaseApproval
+                        ? '/production-requests'
+                        : isLaminationPurchaseApproval
+                            ? '/lamination-requests'
+                            : '/requests';
             const response = await axios.get(`${API_BASE_URL}${endpointBase}/public/preview`, {
                 params: { token }
             });
@@ -50,7 +60,7 @@ const ApprovalAction = () => {
         } finally {
             setLoading(false);
         }
-    }, [token, isGeneralApproval, isUnifiedApproval]);
+    }, [token, isGeneralApproval, isUnifiedApproval, isProductionPurchaseApproval, isLaminationPurchaseApproval]);
 
     const submitAction = useCallback(async (action, { force = false } = {}) => {
         if (!token) return;
@@ -73,7 +83,15 @@ const ApprovalAction = () => {
             setError('');
             setSuccess('');
 
-            const endpointBase = isGeneralApproval ? '/general-approvals' : isUnifiedApproval ? '/unified-requests' : '/requests';
+            const endpointBase = isGeneralApproval
+                ? '/general-approvals'
+                : isUnifiedApproval
+                    ? '/unified-requests'
+                    : isProductionPurchaseApproval
+                        ? '/production-requests'
+                        : isLaminationPurchaseApproval
+                            ? '/lamination-requests'
+                            : '/requests';
             const response = await axios.post(`${API_BASE_URL}${endpointBase}/public/act`, {
                 token,
                 action,
@@ -92,15 +110,31 @@ const ApprovalAction = () => {
         } finally {
             setSubmitting(false);
         }
-    }, [comment, token, isGeneralApproval, isUnifiedApproval]);
+    }, [comment, token, isGeneralApproval, isUnifiedApproval, isProductionPurchaseApproval, isLaminationPurchaseApproval]);
 
     const attachmentUrl = token
-        ? `${API_BASE_URL}${isGeneralApproval ? '/general-approvals' : isUnifiedApproval ? '/unified-requests' : '/requests'}/public/attachment?token=${encodeURIComponent(token)}&forwarded=1`
+        ? `${API_BASE_URL}${isGeneralApproval
+            ? '/general-approvals'
+            : isUnifiedApproval
+                ? '/unified-requests'
+                : isProductionPurchaseApproval
+                    ? '/production-requests'
+                    : isLaminationPurchaseApproval
+                        ? '/lamination-requests'
+                        : '/requests'}/public/attachment?token=${encodeURIComponent(token)}&forwarded=1`
         : null;
 
     useEffect(() => {
         if (actionFromUrl === 'approve' && token) {
-            const endpointBase = isGeneralApproval ? '/general-approvals' : isUnifiedApproval ? '/unified-requests' : '/requests';
+            const endpointBase = isGeneralApproval
+                ? '/general-approvals'
+                : isUnifiedApproval
+                    ? '/unified-requests'
+                    : isProductionPurchaseApproval
+                        ? '/production-requests'
+                        : isLaminationPurchaseApproval
+                            ? '/lamination-requests'
+                            : '/requests';
             const quickActionValue = isUnifiedApproval ? 'APPROVED' : 'approve';
             const quickActionUrl = `${API_BASE_URL}${endpointBase}/public/quick-action?token=${encodeURIComponent(token)}&action=${quickActionValue}`;
             window.location.replace(quickActionUrl);
@@ -113,7 +147,7 @@ const ApprovalAction = () => {
         }
 
         loadPreview();
-    }, [actionFromUrl, token, isGeneralApproval, isUnifiedApproval, openMode, attachmentUrl, loadPreview]);
+    }, [actionFromUrl, token, isGeneralApproval, isUnifiedApproval, isProductionPurchaseApproval, isLaminationPurchaseApproval, openMode, attachmentUrl, loadPreview]);
 
     useEffect(() => {
         if (!preview || !actionFromUrl || autoActionDone) {

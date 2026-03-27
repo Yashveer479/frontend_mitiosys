@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { Send, X, AlertCircle } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import api from '../../services/api';
+import { resolvePurchaseRequestModule } from './requestModuleConfig';
 
 const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
+    const location = useLocation();
+    const moduleConfig = resolvePurchaseRequestModule(location.pathname);
     const [formData, setFormData] = useState({
         title: '',
         request_type: 'Raw Material',
         description: '',
         quantity: 1,
         priority: 'Medium',
-        department: ''
+        department: moduleConfig.defaultDepartment
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -44,13 +48,14 @@ const PurchaseRequestForm = ({ onCancel, onSuccess }) => {
             payload.append('description', formData.description);
             payload.append('quantity', String(formData.quantity));
             payload.append('priority', formData.priority);
-            payload.append('department', formData.department || '');
+            payload.append('department', formData.department || moduleConfig.defaultDepartment);
+            payload.append('source_section', moduleConfig.sourceSection);
 
             if (attachment) {
                 payload.append('attachment', attachment);
             }
 
-            await api.post('/requests/create', payload, {
+            await api.post(`${moduleConfig.apiBase}/create`, payload, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             onSuccess();
